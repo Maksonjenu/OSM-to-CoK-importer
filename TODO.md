@@ -30,8 +30,18 @@ point count or CoK version.
 Implemented on `experiment/forest-area-fill`: bake the fill ourselves (weighted scatter of
 trees/grass/deadwood at the reference density, capped per polygon — see commit for the "real OSM
 forest polygons are way bigger than anything hand-drawn in CoK" practicality problem this ran
-into). Still needs: actually confirming it renders in-game (structure is right, but unverified),
-and merging into `main` if so.
+into). **Confirmed working in-game** — trees actually render now.
+
+Follow-up bug found once fill was confirmed working: some generated forest polygons trigger an
+in-game "area too large" warning/glitch (no exact threshold given by CoK, just a general
+warning). Added grid-based polygon splitting (`GeometryHelpers.SplitPolygonIntoGrid`,
+`ConverterOptions.MaxPlotAreaUnits`, CLI `--max-plot-area`, default 2000 units² — the largest
+confirmed-working reference size) — a big polygon becomes several smaller ones instead of one
+oversized one, each within the cap, still covering the full original area. Still needs: in-game
+confirmation that splitting actually clears the warning (implemented reactively based on the
+report, not yet re-verified), and the visible seam along grid lines is an accepted tradeoff, not
+fixed (no attempt at hiding/blending the cut). If it doesn't fully clear the warning, the real
+threshold may be lower than 2000 — try lowering `--max-plot-area`.
 
 Farmland (`pap_field.tscn`) uses a completely different fill mechanic — not a scatter, but *rows*
 of a stretched `wo_salad_row_path_a.tscn` object (same stretch-tile idea as roads, arranged in
