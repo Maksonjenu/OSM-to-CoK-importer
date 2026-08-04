@@ -1,6 +1,6 @@
 # CoK OSM Importer
 
-Импортирует данные [OpenStreetMap](https://www.openstreetmap.org) (дороги, реки, озёра, леса, поля/посадки, деревья, здания) в файл карты редактора [Canvas of Kings](https://store.steampowered.com/) (`.mommap`). Сделано чтобы превратить реальное место в основу для настольной ролевой карты, а **не для точной картографии**.
+Импортирует данные [OpenStreetMap](https://www.openstreetmap.org) (дороги, реки, озёра, леса, поля/посадки, деревья, здания) в файл карты редактора [Canvas of Kings](https://store.steampowered.com/app/2498570/Canvas_of_Kings/) (`.mommap`). Сделано чтобы превратить реальное место в основу для настольной ролевой карты, а **не для точной картографии**.
 
 English version: [README.md](README.md)
 
