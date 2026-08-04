@@ -4,6 +4,9 @@ Imports [OpenStreetMap](https://www.openstreetmap.org) data (roads, rivers, lake
 
 Russian version: [README.ru.md](README.ru.md)
 
+![OSM-map](StoneIslandSPB_OSM.png)
+![CoK-map](StoneIslandSPB_CoK.JPEG)
+
 ## What gets imported and what doesn't
 
 **Imported:** roads (as CoK road paths), ~~rivers/streams (water splines)~~, lakes/ponds (water planes), forest/shrubland (forest planes — CoK fills them with trees procedurally on its own), fields/orchards/vineyards ("plantings" plane type), fences/walls/palisades, point trees, and buildings (very roughly).

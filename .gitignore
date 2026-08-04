@@ -500,3 +500,7 @@ $RECYCLE.BIN/
 *.jpeg
 *.JPEG
 *.JPG
+
+!StoneIslandSPB_CoK.JPEG
+!StoneIslandSPB_OSM.png
+
