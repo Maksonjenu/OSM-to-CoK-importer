@@ -68,4 +68,65 @@ public class GeometryHelpersTests
 
         Assert.Equal(2, simplified.Count);
     }
+
+    [Fact]
+    public void SplitPolygonIntoGrid_SmallPolygon_ReturnsUnchanged()
+    {
+        var ring = new List<LocalPoint> { new(0, 0), new(10, 0), new(10, 10), new(0, 10) }; // area 100
+
+        var pieces = GeometryHelpers.SplitPolygonIntoGrid(ring, maxArea: 500);
+
+        var piece = Assert.Single(pieces);
+        Assert.Equal(ring, piece);
+    }
+
+    [Fact]
+    public void SplitPolygonIntoGrid_DisabledWhenMaxAreaNonPositive()
+    {
+        var ring = new List<LocalPoint> { new(0, 0), new(100, 0), new(100, 100), new(0, 100) };
+
+        var pieces = GeometryHelpers.SplitPolygonIntoGrid(ring, maxArea: 0);
+
+        Assert.Single(pieces);
+    }
+
+    /// <summary>
+    /// Regression test for a real bug: real OSM forest/farmland polygons can be far larger than
+    /// anything hand-drawn in CoK, and CoK appears to reject/glitch on an oversized plot
+    /// ("area too large"). A big polygon must come back as multiple pieces, each within the cap,
+    /// and together covering the same total area as the original (splitting must not lose land).
+    /// </summary>
+    [Fact]
+    public void SplitPolygonIntoGrid_LargePolygon_SplitsIntoPiecesWithinCapAndPreservesTotalArea()
+    {
+        var ring = new List<LocalPoint> { new(0, 0), new(100, 0), new(100, 100), new(0, 100) }; // area 10000
+        const double maxArea = 900.0;
+
+        var pieces = GeometryHelpers.SplitPolygonIntoGrid(ring, maxArea);
+
+        Assert.True(pieces.Count > 1, "a 10000-unit² polygon capped at 900 should split into more than one piece.");
+        var totalArea = pieces.Sum(p => Math.Abs(GeometryHelpers.SignedArea(p)));
+        Assert.Equal(10000.0, totalArea, precision: 3);
+
+        // Each piece is clipped to fit inside one cellSize x cellSize grid cell (cellSize =
+        // sqrt(maxArea)), so no piece's area can exceed maxArea itself (tiny fp slack aside).
+        Assert.All(pieces, p => Assert.True(Math.Abs(GeometryHelpers.SignedArea(p)) <= maxArea * 1.001));
+    }
+
+    [Fact]
+    public void SplitPolygonIntoGrid_WorksOnNonConvexPolygon()
+    {
+        // An "L" shape (non-convex), area = 100*100 - 50*50 = 7500.
+        var ring = new List<LocalPoint>
+        {
+            new(0, 0), new(100, 0), new(100, 50), new(50, 50), new(50, 100), new(0, 100),
+        };
+        const double maxArea = 1000.0;
+
+        var pieces = GeometryHelpers.SplitPolygonIntoGrid(ring, maxArea);
+
+        Assert.True(pieces.Count > 1);
+        var totalArea = pieces.Sum(p => Math.Abs(GeometryHelpers.SignedArea(p)));
+        Assert.Equal(7500.0, totalArea, precision: 3);
+    }
 }

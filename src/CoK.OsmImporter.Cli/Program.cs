@@ -80,6 +80,7 @@ internal static class Program
             Merge = options.Merge,
             SimplificationUnits = options.SimplificationUnits,
             MaxFillObjectsPerPolygon = options.MaxFillObjectsPerPolygon,
+            MaxPlotAreaUnits = options.MaxPlotAreaUnits,
         };
 
         if (options.Bbox is null)
@@ -141,6 +142,13 @@ internal static class Program
                                           millions of objects and a multi-hundred-MB file. Default
                                           2000; 0 disables area fill entirely (empty, invisible
                                           zones, same as pre-fill behavior).
+              --max-plot-area <units²>   Split a Plot polygon (forest/farmland/water) larger than
+                                          this into a grid of smaller pieces instead of emitting it
+                                          whole. CoK appears to glitch/warn ("area too large") on an
+                                          oversized plot — the exact threshold isn't known, this
+                                          defaults to the largest confirmed-working reference size
+                                          (2000). Splitting leaves a visible seam along grid lines.
+                                          0 or negative disables splitting.
               --merge <append|replace>   append (default) adds to --template's existing content;
                                           replace wipes its objects/paths first.
               --mapping <path>           Use a custom mapping config instead of the built-in default.

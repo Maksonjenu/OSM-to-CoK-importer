@@ -52,4 +52,16 @@ public sealed class ConverterOptions
     /// load. Default matches that observed real-world reference ceiling.
     /// </summary>
     public int MaxFillObjectsPerPolygon { get; init; } = 2000;
+
+    /// <summary>
+    /// Hard cap on a single Plot polygon's area, in output map units² — larger polygons get split
+    /// into a grid of smaller pieces (see GeometryHelpers.SplitPolygonIntoGrid) rather than emitted
+    /// whole. Reported in-game as an "area too large" glitch/warning on real OSM-derived forest
+    /// polygons (which can cover hundreds of hectares — far beyond anything hand-drawn in CoK).
+    /// The exact CoK-side threshold isn't known; this defaults to the largest area confirmed
+    /// working in a real hand-drawn reference file (~2095 units²), same reasoning as
+    /// MaxFillObjectsPerPolygon. Splitting trades a visible seam along the grid lines for keeping
+    /// every piece within whatever CoK's real limit is. 0 or negative disables splitting.
+    /// </summary>
+    public double MaxPlotAreaUnits { get; init; } = 2000.0;
 }

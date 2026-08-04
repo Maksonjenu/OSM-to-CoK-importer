@@ -121,18 +121,15 @@ public sealed class OsmToMommapConverter
                 break;
 
             case WayFeatureKind.WaterPolygon:
-                ctx.NewPaths.Add(BuildPolygonPath(GeometryHelpers.DedupeClosingPoint(pathPoints), _mapping.WaterPolygon.Asset.Filename, _mapping.WaterPolygon.Asset.PathType, ctx, _mapping.WaterPolygon, id));
-                ctx.Summary.WaterPolygons++;
+                ctx.Summary.WaterPolygons += EmitPolygonFeature(GeometryHelpers.DedupeClosingPoint(pathPoints), _mapping.WaterPolygon, ctx, id);
                 break;
 
             case WayFeatureKind.ForestPolygon:
-                ctx.NewPaths.Add(BuildPolygonPath(GeometryHelpers.DedupeClosingPoint(pathPoints), _mapping.ForestPolygon.Asset.Filename, _mapping.ForestPolygon.Asset.PathType, ctx, _mapping.ForestPolygon, id));
-                ctx.Summary.ForestPolygons++;
+                ctx.Summary.ForestPolygons += EmitPolygonFeature(GeometryHelpers.DedupeClosingPoint(pathPoints), _mapping.ForestPolygon, ctx, id);
                 break;
 
             case WayFeatureKind.FarmlandPolygon:
-                ctx.NewPaths.Add(BuildPolygonPath(GeometryHelpers.DedupeClosingPoint(pathPoints), _mapping.FarmlandPolygon.Asset.Filename, _mapping.FarmlandPolygon.Asset.PathType, ctx, _mapping.FarmlandPolygon, id));
-                ctx.Summary.FarmlandPolygons++;
+                ctx.Summary.FarmlandPolygons += EmitPolygonFeature(GeometryHelpers.DedupeClosingPoint(pathPoints), _mapping.FarmlandPolygon, ctx, id);
                 break;
 
             case WayFeatureKind.Barrier:
@@ -195,16 +192,13 @@ public sealed class OsmToMommapConverter
         switch (kind)
         {
             case WayFeatureKind.WaterPolygon:
-                ctx.NewPaths.Add(BuildPolygonPath(uniquePoints, _mapping.WaterPolygon.Asset.Filename, _mapping.WaterPolygon.Asset.PathType, ctx, _mapping.WaterPolygon, relation.Id));
-                ctx.Summary.WaterPolygons++;
+                ctx.Summary.WaterPolygons += EmitPolygonFeature(uniquePoints, _mapping.WaterPolygon, ctx, relation.Id);
                 break;
             case WayFeatureKind.ForestPolygon:
-                ctx.NewPaths.Add(BuildPolygonPath(uniquePoints, _mapping.ForestPolygon.Asset.Filename, _mapping.ForestPolygon.Asset.PathType, ctx, _mapping.ForestPolygon, relation.Id));
-                ctx.Summary.ForestPolygons++;
+                ctx.Summary.ForestPolygons += EmitPolygonFeature(uniquePoints, _mapping.ForestPolygon, ctx, relation.Id);
                 break;
             case WayFeatureKind.FarmlandPolygon:
-                ctx.NewPaths.Add(BuildPolygonPath(uniquePoints, _mapping.FarmlandPolygon.Asset.Filename, _mapping.FarmlandPolygon.Asset.PathType, ctx, _mapping.FarmlandPolygon, relation.Id));
-                ctx.Summary.FarmlandPolygons++;
+                ctx.Summary.FarmlandPolygons += EmitPolygonFeature(uniquePoints, _mapping.FarmlandPolygon, ctx, relation.Id);
                 break;
             default:
                 ctx.Summary.SkippedComplexRelations++;
@@ -353,9 +347,44 @@ public sealed class OsmToMommapConverter
         };
     }
 
+    /// <summary>
+    /// Emits one or more Plot paths for a polygon feature, splitting it first if it's larger than
+    /// ConverterOptions.MaxPlotAreaUnits (see that doc comment — real OSM land-use polygons can be
+    /// far larger than anything CoK's own area limit, whatever it actually is, was designed for).
+    /// Returns how many paths were added, for the caller's summary count.
+    /// </summary>
+    private int EmitPolygonFeature(IReadOnlyList<LocalPoint> uniquePoints, TagDrivenPathRule rule, EmitContext ctx, long seedId)
+    {
+        var pieces = GeometryHelpers.SplitPolygonIntoGrid(uniquePoints, ctx.Options.MaxPlotAreaUnits);
+
+        // The fill budget (see MaxFillObjectsPerPolygon) is for the WHOLE original feature, not
+        // per piece — splitting a big polygon into N smaller ones must not let it claim N times
+        // the fill of an unsplit polygon the same total size. Computed once against the original,
+        // unsplit area and shared out proportionally by each piece's share of that area.
+        var originalArea = Math.Abs(GeometryHelpers.SignedArea(uniquePoints));
+        var totalFillBudget = rule.FillDensity is > 0
+            ? Math.Min(originalArea * rule.FillDensity.Value, ctx.Options.MaxFillObjectsPerPolygon)
+            : 0;
+
+        var emitted = 0;
+        foreach (var piece in pieces)
+        {
+            if (piece.Count < 3)
+                continue;
+
+            var pieceArea = Math.Abs(GeometryHelpers.SignedArea(piece));
+            var pieceFillBudget = originalArea > 1e-9 ? (int)Math.Round(totalFillBudget * (pieceArea / originalArea)) : 0;
+
+            // Vary the fill seed per piece so split polygons don't all scatter identically.
+            ctx.NewPaths.Add(BuildPolygonPath(piece, rule.Asset.Filename, rule.Asset.PathType, ctx, rule, seedId + emitted, pieceFillBudget));
+            emitted++;
+        }
+        return emitted;
+    }
+
     private MapPath BuildPolygonPath(
         IReadOnlyList<LocalPoint> uniquePoints, string filename, int pathType, EmitContext ctx,
-        TagDrivenPathRule? rule = null, long fillSeedId = 0)
+        TagDrivenPathRule? rule = null, long fillSeedId = 0, int? maxFillObjects = null)
     {
         _catalog.GetPath(filename, pathType);
 
@@ -372,7 +401,7 @@ public sealed class OsmToMommapConverter
             LinesCustomScales = Enumerable.Repeat(1.0, segmentCount).ToList(),
             // Always present (even empty) on every real Plot in template.mommap — CoK never omits
             // this key for a Plot type, only for line-type paths (roads/rivers/barriers).
-            AreaObjects = BuildAreaFillObjects(uniquePoints, rule, fillSeedId, ctx.Options.MaxFillObjectsPerPolygon),
+            AreaObjects = BuildAreaFillObjects(uniquePoints, rule, fillSeedId, maxFillObjects ?? ctx.Options.MaxFillObjectsPerPolygon),
             ClickAndPlacingWo = BuildClickAndPlacingWo(uniquePoints, ctx),
         };
     }

@@ -20,6 +20,7 @@ internal sealed class CliOptions
     public MergeMode Merge { get; private set; } = MergeMode.Append;
     public double SimplificationUnits { get; private set; } = 2.0;
     public int MaxFillObjectsPerPolygon { get; private set; } = 2000;
+    public double MaxPlotAreaUnits { get; private set; } = 2000.0;
 
     public static CliOptions Parse(string[] args)
     {
@@ -82,6 +83,9 @@ internal sealed class CliOptions
                     if (maxFillRaw < 0)
                         throw new CliArgumentException("--max-fill must be zero or positive (0 disables area fill entirely).");
                     options.MaxFillObjectsPerPolygon = (int)maxFillRaw;
+                    break;
+                case "--max-plot-area":
+                    options.MaxPlotAreaUnits = ParseDouble(RequireValue(args, ref i, "--max-plot-area"), "--max-plot-area");
                     break;
                 default:
                     throw new CliArgumentException($"Unrecognized argument '{args[i]}'.");

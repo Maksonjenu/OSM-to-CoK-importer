@@ -266,6 +266,24 @@ public class ConverterIntegrationTests
         Assert.InRange(forest.AreaObjects!.Count, expected * 0.5, expected * 1.5 + 5);
     }
 
+    /// <summary>
+    /// Regression test for a real bug found after the forest-fill fix: real OSM forest polygons
+    /// can trigger an in-game "area too large" glitch. A polygon bigger than MaxPlotAreaUnits must
+    /// come back as multiple smaller MapPaths instead of one oversized one, and the summary count
+    /// must reflect the actual number of paths emitted (not the original feature count).
+    /// </summary>
+    [Fact]
+    public void Convert_OversizedForestPolygon_SplitsIntoMultiplePaths()
+    {
+        var (target, summary) = RunConverter(new ConverterOptions { MaxPlotAreaUnits = 10.0 });
+
+        var forestPaths = target.Paths.Where(p => p.Filename.Contains("pap_forest")).ToList();
+
+        Assert.True(forestPaths.Count > 1, "a forest polygon far bigger than a 10-unit² cap should split.");
+        Assert.Equal(forestPaths.Count, summary.ForestPolygons);
+        Assert.All(forestPaths, p => Assert.True(p.IsClosed));
+    }
+
     /// <summary>Water plots always have area_objects present but empty — their fill is a
     /// shader/mesh effect, not discrete baked objects (confirmed: template.mommap's lake/ocean
     /// plots and the reference file's water plots are all `"area_objects": []`).</summary>
