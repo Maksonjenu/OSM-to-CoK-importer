@@ -65,8 +65,9 @@ public sealed class MapObject
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? IsClickable { get; set; }
 
-    /// <summary>Set on river water-surface placeholder rectangles; a fixed constant (44) observed
-    /// on every one in template.mommap, distinct from the path's own <see cref="ClickAndPlacingWo.AssignedPathAreaIdx"/>.</summary>
+    /// <summary>Set on river water-surface placeholder rectangles (a fixed constant, 44, observed
+    /// on every one in template.mommap) and on a Plot's baked area-fill objects (0 for a simple
+    /// single-ring polygon) — distinct from the path's own <see cref="ClickAndPlacingWo.AssignedPathAreaIdx"/>.</summary>
     [JsonPropertyName("assigned_path_area_idx")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? AssignedPathAreaIdx { get; set; }

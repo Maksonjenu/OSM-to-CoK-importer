@@ -187,6 +187,20 @@ public sealed class MapPath
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<LineBorderPointSet>? LinesBorderPoints { get; set; }
 
+    /// <summary>
+    /// The actual interior fill content for a closed Plot (forest/farmland/etc): individual
+    /// decoration/tree instances for forest, row objects for farmland. NOT generated procedurally
+    /// at load time — CoK bakes this into the file when the shape is drawn/edited in the editor,
+    /// so an empty list here (which is what a freshly-emitted forest polygon has by default,
+    /// matching what the game itself writes for a plot with no fill yet) renders as an empty,
+    /// invisible zone. Water plots (lake/ocean) always have this empty even when "full" — their
+    /// fill is a shader/mesh effect, not discrete objects. Present (possibly empty) on every Plot
+    /// path, absent on line-type paths (roads, rivers, barriers).
+    /// </summary>
+    [JsonPropertyName("area_objects")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<MapObject>? AreaObjects { get; set; }
+
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; set; }
 }

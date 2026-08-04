@@ -149,6 +149,10 @@
       "object_type": 14
     },
     {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_branch_b.tscn",
+      "object_type": 14
+    },
+    {
       "filename": "res://Source/World/WorldObjects/woDecos/wo_branch_c.tscn",
       "object_type": 14
     },

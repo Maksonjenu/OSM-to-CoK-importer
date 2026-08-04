@@ -109,4 +109,171 @@ internal static class GeometryHelpers
         var projZ = a.Z + t * dz;
         return Math.Sqrt(Math.Pow(p.X - projX, 2) + Math.Pow(p.Z - projZ, 2));
     }
+
+    public static double SignedArea(IReadOnlyList<LocalPoint> ring)
+    {
+        var a = 0.0;
+        var n = ring.Count;
+        for (var i = 0; i < n; i++)
+        {
+            var p1 = ring[i];
+            var p2 = ring[(i + 1) % n];
+            a += p1.X * p2.Z - p2.X * p1.Z;
+        }
+        return a / 2.0;
+    }
+
+    /// <summary>
+    /// Scatters points uniformly at random inside a (possibly non-convex) polygon via rejection
+    /// sampling, at roughly <paramref name="density"/> points per unit² of the polygon's actual
+    /// area. Used to bake CoK's forest-plot interior fill (see <see cref="MapObject"/>-building
+    /// code in the converter) — CoK does this itself when a forest zone is drawn interactively in
+    /// the editor and saves the result into the file; it does NOT regenerate it at load time, so an
+    /// importer-created plot needs to bake its own fill the same way or it renders as an empty,
+    /// invisible zone (confirmed against real hand-drawn CoK test data: ~1 object/unit², a
+    /// forest-shaped ring with zero fill objects was the one case that stayed empty/never got
+    /// filled in-editor either).
+    /// </summary>
+    public static List<LocalPoint> ScatterPointsInPolygon(IReadOnlyList<LocalPoint> ring, double density, Random rng, int maxCount = int.MaxValue)
+    {
+        var result = new List<LocalPoint>();
+        if (ring.Count < 3 || density <= 0)
+            return result;
+
+        var area = Math.Abs(SignedArea(ring));
+        var targetCount = Math.Min((int)Math.Round(area * density), maxCount);
+        if (targetCount <= 0)
+            return result;
+
+        var minX = ring.Min(p => p.X);
+        var maxX = ring.Max(p => p.X);
+        var minZ = ring.Min(p => p.Z);
+        var maxZ = ring.Max(p => p.Z);
+
+        // Rejection sampling against the bounding box; capped so a thin/degenerate polygon (tiny
+        // fill ratio inside its own bbox) can't spin forever — it'll just under-fill instead.
+        var maxAttempts = Math.Max(targetCount * 50, 2000);
+        var attempts = 0;
+        while (result.Count < targetCount && attempts < maxAttempts)
+        {
+            attempts++;
+            var x = minX + rng.NextDouble() * (maxX - minX);
+            var z = minZ + rng.NextDouble() * (maxZ - minZ);
+            if (IsPointInPolygon(ring, x, z))
+                result.Add(new LocalPoint(x, z));
+        }
+
+        return result;
+    }
+
+    /// <summary>Standard ray-casting point-in-polygon test.</summary>
+    private static bool IsPointInPolygon(IReadOnlyList<LocalPoint> ring, double x, double z)
+    {
+        var inside = false;
+        var n = ring.Count;
+        for (int i = 0, j = n - 1; i < n; j = i++)
+        {
+            var pi = ring[i];
+            var pj = ring[j];
+            var crosses = pi.Z > z != pj.Z > z;
+            if (!crosses)
+                continue;
+
+            var xIntersect = pj.X + (z - pj.Z) / (pi.Z - pj.Z) * (pi.X - pj.X);
+            if (x < xIntersect)
+                inside = !inside;
+        }
+        return inside;
+    }
+
+    /// <summary>
+    /// Splits a polygon into pieces no larger than <paramref name="maxArea"/> map units² by
+    /// clipping it against a grid of square cells. Real-world OSM `natural=wood`/`landuse=forest`
+    /// polygons can cover hundreds of hectares — CoK appears to reject or visually glitch on a
+    /// plot beyond some (undocumented) area, matching the "path invalid" pattern already seen for
+    /// dense line geometry. Splitting preserves full coverage (unlike just refusing to emit an
+    /// oversized polygon) at the cost of a visible seam between pieces along the grid lines.
+    /// Returns the original ring unchanged (as the only element) if it's already small enough or
+    /// <paramref name="maxArea"/> is non-positive (splitting disabled).
+    /// </summary>
+    public static List<List<LocalPoint>> SplitPolygonIntoGrid(IReadOnlyList<LocalPoint> ring, double maxArea)
+    {
+        if (ring.Count < 3 || maxArea <= 0 || Math.Abs(SignedArea(ring)) <= maxArea)
+            return new List<List<LocalPoint>> { ring.ToList() };
+
+        var minX = ring.Min(p => p.X);
+        var maxX = ring.Max(p => p.X);
+        var minZ = ring.Min(p => p.Z);
+        var maxZ = ring.Max(p => p.Z);
+        var cellSize = Math.Max(Math.Sqrt(maxArea), 1e-3);
+
+        var pieces = new List<List<LocalPoint>>();
+        for (var x = minX; x < maxX; x += cellSize)
+        {
+            for (var z = minZ; z < maxZ; z += cellSize)
+            {
+                var clipped = ClipPolygonToRect(ring, x, z, x + cellSize, z + cellSize);
+                if (clipped.Count >= 3 && Math.Abs(SignedArea(clipped)) > 0.5)
+                    pieces.Add(clipped);
+            }
+        }
+
+        // A degenerate/very thin polygon might clip to nothing usable — fall back to the
+        // original rather than silently dropping the feature.
+        return pieces.Count > 0 ? pieces : new List<List<LocalPoint>> { ring.ToList() };
+    }
+
+    /// <summary>
+    /// Sutherland-Hodgman polygon clipping against an axis-aligned rectangle. Correct for any
+    /// simple (possibly non-convex) subject polygon, since only the clip window needs to be convex
+    /// — a rectangle always is.
+    /// </summary>
+    private static List<LocalPoint> ClipPolygonToRect(IReadOnlyList<LocalPoint> subject, double minX, double minZ, double maxX, double maxZ)
+    {
+        var points = subject.ToList();
+        points = ClipEdge(points, p => p.X >= minX, (a, b) => IntersectX(a, b, minX));
+        points = ClipEdge(points, p => p.X <= maxX, (a, b) => IntersectX(a, b, maxX));
+        points = ClipEdge(points, p => p.Z >= minZ, (a, b) => IntersectZ(a, b, minZ));
+        points = ClipEdge(points, p => p.Z <= maxZ, (a, b) => IntersectZ(a, b, maxZ));
+        return points;
+    }
+
+    private static List<LocalPoint> ClipEdge(List<LocalPoint> input, Func<LocalPoint, bool> isInside, Func<LocalPoint, LocalPoint, LocalPoint> intersect)
+    {
+        if (input.Count == 0)
+            return input;
+
+        var output = new List<LocalPoint>();
+        for (var i = 0; i < input.Count; i++)
+        {
+            var current = input[i];
+            var previous = input[(i - 1 + input.Count) % input.Count];
+            var currentInside = isInside(current);
+            var previousInside = isInside(previous);
+
+            if (currentInside)
+            {
+                if (!previousInside)
+                    output.Add(intersect(previous, current));
+                output.Add(current);
+            }
+            else if (previousInside)
+            {
+                output.Add(intersect(previous, current));
+            }
+        }
+        return output;
+    }
+
+    private static LocalPoint IntersectX(LocalPoint a, LocalPoint b, double x)
+    {
+        var t = (x - a.X) / (b.X - a.X);
+        return new LocalPoint(x, a.Z + t * (b.Z - a.Z));
+    }
+
+    private static LocalPoint IntersectZ(LocalPoint a, LocalPoint b, double z)
+    {
+        var t = (z - a.Z) / (b.Z - a.Z);
+        return new LocalPoint(a.X + t * (b.X - a.X), z);
+    }
 }
