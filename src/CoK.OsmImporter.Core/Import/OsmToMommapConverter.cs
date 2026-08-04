@@ -121,17 +121,17 @@ public sealed class OsmToMommapConverter
                 break;
 
             case WayFeatureKind.WaterPolygon:
-                ctx.NewPaths.Add(BuildPolygonPath(GeometryHelpers.DedupeClosingPoint(pathPoints), _mapping.WaterPolygon.Asset.Filename, _mapping.WaterPolygon.Asset.PathType, ctx));
+                ctx.NewPaths.Add(BuildPolygonPath(GeometryHelpers.DedupeClosingPoint(pathPoints), _mapping.WaterPolygon.Asset.Filename, _mapping.WaterPolygon.Asset.PathType, ctx, _mapping.WaterPolygon, id));
                 ctx.Summary.WaterPolygons++;
                 break;
 
             case WayFeatureKind.ForestPolygon:
-                ctx.NewPaths.Add(BuildPolygonPath(GeometryHelpers.DedupeClosingPoint(pathPoints), _mapping.ForestPolygon.Asset.Filename, _mapping.ForestPolygon.Asset.PathType, ctx));
+                ctx.NewPaths.Add(BuildPolygonPath(GeometryHelpers.DedupeClosingPoint(pathPoints), _mapping.ForestPolygon.Asset.Filename, _mapping.ForestPolygon.Asset.PathType, ctx, _mapping.ForestPolygon, id));
                 ctx.Summary.ForestPolygons++;
                 break;
 
             case WayFeatureKind.FarmlandPolygon:
-                ctx.NewPaths.Add(BuildPolygonPath(GeometryHelpers.DedupeClosingPoint(pathPoints), _mapping.FarmlandPolygon.Asset.Filename, _mapping.FarmlandPolygon.Asset.PathType, ctx));
+                ctx.NewPaths.Add(BuildPolygonPath(GeometryHelpers.DedupeClosingPoint(pathPoints), _mapping.FarmlandPolygon.Asset.Filename, _mapping.FarmlandPolygon.Asset.PathType, ctx, _mapping.FarmlandPolygon, id));
                 ctx.Summary.FarmlandPolygons++;
                 break;
 
@@ -195,15 +195,15 @@ public sealed class OsmToMommapConverter
         switch (kind)
         {
             case WayFeatureKind.WaterPolygon:
-                ctx.NewPaths.Add(BuildPolygonPath(uniquePoints, _mapping.WaterPolygon.Asset.Filename, _mapping.WaterPolygon.Asset.PathType, ctx));
+                ctx.NewPaths.Add(BuildPolygonPath(uniquePoints, _mapping.WaterPolygon.Asset.Filename, _mapping.WaterPolygon.Asset.PathType, ctx, _mapping.WaterPolygon, relation.Id));
                 ctx.Summary.WaterPolygons++;
                 break;
             case WayFeatureKind.ForestPolygon:
-                ctx.NewPaths.Add(BuildPolygonPath(uniquePoints, _mapping.ForestPolygon.Asset.Filename, _mapping.ForestPolygon.Asset.PathType, ctx));
+                ctx.NewPaths.Add(BuildPolygonPath(uniquePoints, _mapping.ForestPolygon.Asset.Filename, _mapping.ForestPolygon.Asset.PathType, ctx, _mapping.ForestPolygon, relation.Id));
                 ctx.Summary.ForestPolygons++;
                 break;
             case WayFeatureKind.FarmlandPolygon:
-                ctx.NewPaths.Add(BuildPolygonPath(uniquePoints, _mapping.FarmlandPolygon.Asset.Filename, _mapping.FarmlandPolygon.Asset.PathType, ctx));
+                ctx.NewPaths.Add(BuildPolygonPath(uniquePoints, _mapping.FarmlandPolygon.Asset.Filename, _mapping.FarmlandPolygon.Asset.PathType, ctx, _mapping.FarmlandPolygon, relation.Id));
                 ctx.Summary.FarmlandPolygons++;
                 break;
             default:
@@ -353,7 +353,9 @@ public sealed class OsmToMommapConverter
         };
     }
 
-    private MapPath BuildPolygonPath(IReadOnlyList<LocalPoint> uniquePoints, string filename, int pathType, EmitContext ctx)
+    private MapPath BuildPolygonPath(
+        IReadOnlyList<LocalPoint> uniquePoints, string filename, int pathType, EmitContext ctx,
+        TagDrivenPathRule? rule = null, long fillSeedId = 0)
     {
         _catalog.GetPath(filename, pathType);
 
@@ -368,8 +370,47 @@ public sealed class OsmToMommapConverter
             PointsObjects = uniquePoints.Select((p, i) => new PointObject { PositionX = p.X, PositionZ = p.Z, AssignedPathPointIdx = i }).ToList(),
             LinesObjects = Enumerable.Range(0, segmentCount).Select(_ => new LineObjectGroup()).ToList(),
             LinesCustomScales = Enumerable.Repeat(1.0, segmentCount).ToList(),
+            // Always present (even empty) on every real Plot in template.mommap — CoK never omits
+            // this key for a Plot type, only for line-type paths (roads/rivers/barriers).
+            AreaObjects = BuildAreaFillObjects(uniquePoints, rule, fillSeedId, ctx.Options.MaxFillObjectsPerPolygon),
             ClickAndPlacingWo = BuildClickAndPlacingWo(uniquePoints, ctx),
         };
+    }
+
+    /// <summary>
+    /// Bakes a plot's interior fill (see MapPath.AreaObjects doc comment for why this can't be
+    /// left to load-time generation). Empty for plot types with no configured fill (water: its
+    /// fill is a shader effect, not discrete objects) or an unclosed/degenerate ring. Capped at
+    /// <paramref name="maxCount"/> — see ConverterOptions.MaxFillObjectsPerPolygon for why a real
+    /// OSM forest polygon's actual area can't be used uncapped.
+    /// </summary>
+    private List<MapObject> BuildAreaFillObjects(IReadOnlyList<LocalPoint> ring, TagDrivenPathRule? rule, long seedId, int maxCount)
+    {
+        if (rule is null || rule.Fill.Count == 0 || rule.FillDensity is not > 0 || ring.Count < 3)
+            return new List<MapObject>();
+
+        var rng = WeightedPicker.CreateSeededRandom(seedId, salt: 5);
+        var scatterPoints = GeometryHelpers.ScatterPointsInPolygon(ring, rule.FillDensity.Value, rng, maxCount);
+
+        var objects = new List<MapObject>(scatterPoints.Count);
+        foreach (var p in scatterPoints)
+        {
+            var assetFilename = WeightedPicker.PickAsset(rule.Fill, rng);
+            var scale = 0.8 + rng.NextDouble() * 0.4;
+            objects.Add(new MapObject
+            {
+                Filename = assetFilename,
+                PositionX = p.X,
+                PositionZ = p.Z,
+                RotationY = rng.NextDouble() * 360.0,
+                ScaleX = scale,
+                ScaleZ = scale,
+                ObjectType = _catalog.GetObjectType(assetFilename),
+                AssignedPathAreaIdx = 0,
+            });
+        }
+
+        return objects;
     }
 
     private static ClickAndPlacingWo BuildClickAndPlacingWo(IReadOnlyList<LocalPoint> points, EmitContext ctx)

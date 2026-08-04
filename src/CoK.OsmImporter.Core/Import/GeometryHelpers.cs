@@ -109,4 +109,80 @@ internal static class GeometryHelpers
         var projZ = a.Z + t * dz;
         return Math.Sqrt(Math.Pow(p.X - projX, 2) + Math.Pow(p.Z - projZ, 2));
     }
+
+    public static double SignedArea(IReadOnlyList<LocalPoint> ring)
+    {
+        var a = 0.0;
+        var n = ring.Count;
+        for (var i = 0; i < n; i++)
+        {
+            var p1 = ring[i];
+            var p2 = ring[(i + 1) % n];
+            a += p1.X * p2.Z - p2.X * p1.Z;
+        }
+        return a / 2.0;
+    }
+
+    /// <summary>
+    /// Scatters points uniformly at random inside a (possibly non-convex) polygon via rejection
+    /// sampling, at roughly <paramref name="density"/> points per unit² of the polygon's actual
+    /// area. Used to bake CoK's forest-plot interior fill (see <see cref="MapObject"/>-building
+    /// code in the converter) — CoK does this itself when a forest zone is drawn interactively in
+    /// the editor and saves the result into the file; it does NOT regenerate it at load time, so an
+    /// importer-created plot needs to bake its own fill the same way or it renders as an empty,
+    /// invisible zone (confirmed against real hand-drawn CoK test data: ~1 object/unit², a
+    /// forest-shaped ring with zero fill objects was the one case that stayed empty/never got
+    /// filled in-editor either).
+    /// </summary>
+    public static List<LocalPoint> ScatterPointsInPolygon(IReadOnlyList<LocalPoint> ring, double density, Random rng, int maxCount = int.MaxValue)
+    {
+        var result = new List<LocalPoint>();
+        if (ring.Count < 3 || density <= 0)
+            return result;
+
+        var area = Math.Abs(SignedArea(ring));
+        var targetCount = Math.Min((int)Math.Round(area * density), maxCount);
+        if (targetCount <= 0)
+            return result;
+
+        var minX = ring.Min(p => p.X);
+        var maxX = ring.Max(p => p.X);
+        var minZ = ring.Min(p => p.Z);
+        var maxZ = ring.Max(p => p.Z);
+
+        // Rejection sampling against the bounding box; capped so a thin/degenerate polygon (tiny
+        // fill ratio inside its own bbox) can't spin forever — it'll just under-fill instead.
+        var maxAttempts = Math.Max(targetCount * 50, 2000);
+        var attempts = 0;
+        while (result.Count < targetCount && attempts < maxAttempts)
+        {
+            attempts++;
+            var x = minX + rng.NextDouble() * (maxX - minX);
+            var z = minZ + rng.NextDouble() * (maxZ - minZ);
+            if (IsPointInPolygon(ring, x, z))
+                result.Add(new LocalPoint(x, z));
+        }
+
+        return result;
+    }
+
+    /// <summary>Standard ray-casting point-in-polygon test.</summary>
+    private static bool IsPointInPolygon(IReadOnlyList<LocalPoint> ring, double x, double z)
+    {
+        var inside = false;
+        var n = ring.Count;
+        for (int i = 0, j = n - 1; i < n; j = i++)
+        {
+            var pi = ring[i];
+            var pj = ring[j];
+            var crosses = pi.Z > z != pj.Z > z;
+            if (!crosses)
+                continue;
+
+            var xIntersect = pj.X + (z - pj.Z) / (pi.Z - pj.Z) * (pi.X - pj.X);
+            if (x < xIntersect)
+                inside = !inside;
+        }
+        return inside;
+    }
 }

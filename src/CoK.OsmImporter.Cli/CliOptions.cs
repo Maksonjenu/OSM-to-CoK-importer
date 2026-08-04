@@ -19,6 +19,7 @@ internal sealed class CliOptions
     public ImportProfile Profile { get; private set; } = ImportProfile.Full;
     public MergeMode Merge { get; private set; } = MergeMode.Append;
     public double SimplificationUnits { get; private set; } = 2.0;
+    public int MaxFillObjectsPerPolygon { get; private set; } = 2000;
 
     public static CliOptions Parse(string[] args)
     {
@@ -75,6 +76,12 @@ internal sealed class CliOptions
                     options.SimplificationUnits = ParseDouble(RequireValue(args, ref i, "--simplify"), "--simplify");
                     if (options.SimplificationUnits < 0)
                         throw new CliArgumentException("--simplify must be zero or positive (0 disables simplification).");
+                    break;
+                case "--max-fill":
+                    var maxFillRaw = ParseDouble(RequireValue(args, ref i, "--max-fill"), "--max-fill");
+                    if (maxFillRaw < 0)
+                        throw new CliArgumentException("--max-fill must be zero or positive (0 disables area fill entirely).");
+                    options.MaxFillObjectsPerPolygon = (int)maxFillRaw;
                     break;
                 default:
                     throw new CliArgumentException($"Unrecognized argument '{args[i]}'.");

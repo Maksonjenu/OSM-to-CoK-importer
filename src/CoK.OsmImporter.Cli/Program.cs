@@ -79,6 +79,7 @@ internal static class Program
             Profile = options.Profile,
             Merge = options.Merge,
             SimplificationUnits = options.SimplificationUnits,
+            MaxFillObjectsPerPolygon = options.MaxFillObjectsPerPolygon,
         };
 
         if (options.Bbox is null)
@@ -132,6 +133,14 @@ internal static class Program
                                           point density and sharp micro-zigzags ("path invalid").
                                           Default 2.0; 0 disables it; raise it if you still see
                                           "path invalid" errors.
+              --max-fill <count>         Cap on baked interior-fill objects (trees, grass...) per
+                                          forest/farmland plot. CoK bakes this fill into the file
+                                          itself (not generated at load time) and its own density is
+                                          tuned for small hand-drawn zones — an uncapped real OSM
+                                          forest polygon can be hundreds of hectares, producing
+                                          millions of objects and a multi-hundred-MB file. Default
+                                          2000; 0 disables area fill entirely (empty, invisible
+                                          zones, same as pre-fill behavior).
               --merge <append|replace>   append (default) adds to --template's existing content;
                                           replace wipes its objects/paths first.
               --mapping <path>           Use a custom mapping config instead of the built-in default.

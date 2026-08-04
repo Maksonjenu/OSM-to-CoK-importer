@@ -1,5 +1,6 @@
 using System.Text;
 using CoK.OsmImporter.Core.AssetCatalog;
+using CoK.OsmImporter.Core.Geo;
 using CoK.OsmImporter.Core.Import;
 using CoK.OsmImporter.Core.Mapping;
 using CoK.OsmImporter.Core.Mommap;
@@ -221,6 +222,80 @@ public class ConverterIntegrationTests
         Assert.Equal(5, forest.MainPoints.Count); // 4 unique + closing repeat
         Assert.Equal(4, forest.PointsObjects.Count);
         Assert.Equal(4, forest.LinesObjects.Count);
+    }
+
+    /// <summary>
+    /// Regression test for a real bug found via a user-provided reference file (a forest zone
+    /// hand-drawn, then auto-filled by CoK's own tooling, in the real editor): CoK does NOT
+    /// generate a forest plot's tree/grass fill procedurally at load time — it bakes actual object
+    /// instances into `area_objects` when the shape is drawn/edited in the editor. A forest plot
+    /// with an empty `area_objects` (what every earlier version of this importer emitted) renders
+    /// as an empty, invisible zone. Confirmed density from the reference file: ~1 object/unit².
+    /// </summary>
+    [Fact]
+    public void Convert_ForestPolygonGetsBakedAreaFill()
+    {
+        var (target, _) = RunConverter();
+        var catalog = AssetCatalog.AssetCatalog.LoadEmbedded();
+
+        var forest = target.Paths.Single(p => p.Filename.Contains("pap_forest"));
+
+        Assert.NotNull(forest.AreaObjects);
+        Assert.NotEmpty(forest.AreaObjects!);
+
+        foreach (var deco in forest.AreaObjects!)
+        {
+            Assert.Equal(catalog.GetObjectType(deco.Filename), deco.ObjectType);
+            Assert.Equal(0, deco.AssignedPathAreaIdx);
+            Assert.InRange(deco.ScaleX!.Value, 0.79, 1.21);
+        }
+    }
+
+    [Fact]
+    public void Convert_ForestFillCountRoughlyMatchesConfiguredDensityTimesArea()
+    {
+        var (target, _) = RunConverter();
+
+        var forest = target.Paths.Single(p => p.Filename.Contains("pap_forest"));
+        var ring = forest.PointsObjects.Select(po => new LocalPoint(po.PositionX, po.PositionZ)).ToList();
+        var area = Math.Abs(GeometryHelpers.SignedArea(ring));
+        var density = MappingConfigLoader.LoadDefault().ForestPolygon.FillDensity!.Value;
+
+        // Rejection sampling won't hit the target exactly for a tiny polygon, but should be close.
+        var expected = area * density;
+        Assert.InRange(forest.AreaObjects!.Count, expected * 0.5, expected * 1.5 + 5);
+    }
+
+    /// <summary>Water plots always have area_objects present but empty — their fill is a
+    /// shader/mesh effect, not discrete baked objects (confirmed: template.mommap's lake/ocean
+    /// plots and the reference file's water plots are all `"area_objects": []`).</summary>
+    [Fact]
+    public void Convert_WaterPolygonHasEmptyAreaObjects()
+    {
+        var way = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <osm version="0.6" generator="test">
+             <node id="1" lat="53.6900" lon="88.0600"/>
+             <node id="2" lat="53.6901" lon="88.0600"/>
+             <node id="3" lat="53.6901" lon="88.0601"/>
+             <node id="4" lat="53.6900" lon="88.0601"/>
+             <way id="200">
+              <nd ref="1"/><nd ref="2"/><nd ref="3"/><nd ref="4"/><nd ref="1"/>
+              <tag k="natural" v="water"/>
+             </way>
+            </osm>
+            """;
+        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(way));
+        var osm = OsmXmlParser.Parse(stream);
+        var mapping = MappingConfigLoader.LoadDefault();
+        var catalog = AssetCatalog.AssetCatalog.LoadEmbedded();
+        var converter = new OsmToMommapConverter(mapping, catalog);
+        var target = MommapDocument.CreateBlank();
+        converter.Convert(osm, target, new ConverterOptions());
+
+        var lake = Assert.Single(target.Paths);
+        Assert.NotNull(lake.AreaObjects);
+        Assert.Empty(lake.AreaObjects!);
     }
 
     [Fact]

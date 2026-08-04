@@ -9,14 +9,19 @@ namespace CoK.OsmImporter.Core.Import;
 /// </summary>
 internal static class WeightedPicker
 {
-    public static string PickAsset(IReadOnlyList<WeightedAsset> assets, long osmId, int salt)
+    public static string PickAsset(IReadOnlyList<WeightedAsset> assets, long osmId, int salt) =>
+        PickAsset(assets, new Random(Seed(osmId, salt)));
+
+    /// <summary>Same weighted pick, but drawing from a caller-supplied RNG stream — for callers
+    /// (like a per-polygon area-fill scatter) that need many picks from one seeded sequence
+    /// instead of reseeding per pick.</summary>
+    public static string PickAsset(IReadOnlyList<WeightedAsset> assets, Random rng)
     {
         if (assets.Count == 0)
             throw new InvalidOperationException("Cannot pick from an empty asset list — check mapping.json.");
         if (assets.Count == 1)
             return assets[0].Filename;
 
-        var rng = new Random(Seed(osmId, salt));
         var total = assets.Sum(a => a.Weight);
         var r = rng.NextDouble() * total;
         var cumulative = 0.0;
@@ -35,6 +40,8 @@ internal static class WeightedPicker
         var rng = new Random(Seed(osmId, salt));
         return min + rng.NextDouble() * (max - min);
     }
+
+    public static Random CreateSeededRandom(long osmId, int salt) => new(Seed(osmId, salt));
 
     private static int Seed(long osmId, int salt)
     {

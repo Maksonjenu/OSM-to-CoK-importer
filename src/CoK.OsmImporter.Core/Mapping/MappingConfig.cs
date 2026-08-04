@@ -80,6 +80,22 @@ public sealed class TagDrivenPathRule
 
     [JsonPropertyName("waterway_values")]
     public List<string> WaterwayValues { get; init; } = new();
+
+    /// <summary>
+    /// Weighted-random interior fill for closed Plot types (forest). CoK bakes actual object
+    /// instances into a plot's interior when it's drawn in the editor — it's not procedural at
+    /// load time — so an importer-created plot needs the same treatment or it renders empty. See
+    /// MapPath.AreaObjects. Empty/unused for line features (waterway) and plots whose fill is a
+    /// shader/mesh effect rather than discrete objects (water_polygon).
+    /// </summary>
+    [JsonPropertyName("fill")]
+    public List<WeightedAsset> Fill { get; init; } = new();
+
+    /// <summary>Fill objects per output map unit² (NOT scaled by --scale — same reasoning as
+    /// ConverterOptions.SimplificationUnits: this is about what looks/performs reasonably in the
+    /// final output, not real-world tree density).</summary>
+    [JsonPropertyName("fill_density")]
+    public double? FillDensity { get; init; }
 }
 
 /// <summary>

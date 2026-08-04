@@ -41,4 +41,15 @@ public sealed class ConverterOptions
     /// simplification.
     /// </summary>
     public double SimplificationUnits { get; init; } = 2.0;
+
+    /// <summary>
+    /// Hard cap on baked area-fill objects (see MapPath.AreaObjects) per polygon. Real-world
+    /// natural=wood/landuse=forest OSM polygons can cover hundreds of hectares — CoK's own
+    /// ~1 object/unit² fill density was clearly tuned for small hand-drawn zones (observed max:
+    /// ~2000 objects for the largest reference test zone), and applying it uncoupled to a
+    /// real-world forest's actual area produces file sizes and object counts in the hundreds of
+    /// thousands to millions, which is impractical for both the .mommap file and CoK itself to
+    /// load. Default matches that observed real-world reference ceiling.
+    /// </summary>
+    public int MaxFillObjectsPerPolygon { get; init; } = 2000;
 }

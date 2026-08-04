@@ -42,7 +42,26 @@
   "forest_polygon": {
     "asset": { "filename": "res://Source/World/Plots/pap_forest.tscn", "path_type": 25 },
     "natural_values": ["wood", "scrub"],
-    "landuse_values": ["forest"]
+    "landuse_values": ["forest"],
+    "fill_density": 1.0,
+    "fill": [
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_grass_a.tscn", "weight": 25.0 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_a.tscn", "weight": 12.0 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_ab.tscn", "weight": 12.0 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_ac.tscn", "weight": 12.0 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_b.tscn", "weight": 12.0 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_c.tscn", "weight": 12.0 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_cb.tscn", "weight": 12.0 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_trunk_a.tscn", "weight": 0.5 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_trunk_b.tscn", "weight": 0.5 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_trunk_c.tscn", "weight": 0.5 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_trunk_d.tscn", "weight": 0.5 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_trunk_e.tscn", "weight": 0.5 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_branch_a.tscn", "weight": 0.5 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_branch_b.tscn", "weight": 0.5 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_branch_c.tscn", "weight": 0.5 },
+      { "filename": "res://Source/World/WorldObjects/woDecos/wo_branch_d.tscn", "weight": 0.5 }
+    ]
   },
   "farmland_polygon": {
     "asset": { "filename": "res://Source/World/Plots/pap_field.tscn", "path_type": 26 },
