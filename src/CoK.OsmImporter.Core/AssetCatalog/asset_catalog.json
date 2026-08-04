@@ -1,0 +1,1023 @@
+{
+  "objects": [
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/woHuts/wo_hut_cottage_a.tscn",
+      "object_type": 23
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/woHuts/wo_hut_cottage_b.tscn",
+      "object_type": 23
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/woHuts/wo_hut_cottage_c.tscn",
+      "object_type": 23
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/woHuts/wo_hut_cottage_cb.tscn",
+      "object_type": 23
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_market_stall_a.tscn",
+      "object_type": 21
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_market_stall_b.tscn",
+      "object_type": 21
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_market_stall_c.tscn",
+      "object_type": 21
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_market_stall_d.tscn",
+      "object_type": 21
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_market_stall_e.tscn",
+      "object_type": 21
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_market_stall_f.tscn",
+      "object_type": 21
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_market_stall_g.tscn",
+      "object_type": 21
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_market_stall_h.tscn",
+      "object_type": 21
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_market_stall_i.tscn",
+      "object_type": 21
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_market_stall_j.tscn",
+      "object_type": 21
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_market_stall_k.tscn",
+      "object_type": 21
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_market_stall_l.tscn",
+      "object_type": 21
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_market_stall_m.tscn",
+      "object_type": 21
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_tavern_a.tscn",
+      "object_type": 24
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_tent_a.tscn",
+      "object_type": 18
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_tent_b.tscn",
+      "object_type": 18
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_tent_d.tscn",
+      "object_type": 18
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_tent_e.tscn",
+      "object_type": 18
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_tent_f.tscn",
+      "object_type": 18
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_tent_g.tscn",
+      "object_type": 18
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_well_a.tscn",
+      "object_type": 13
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_well_b.tscn",
+      "object_type": 13
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_well_c.tscn",
+      "object_type": 13
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woBuildings/wo_well_d.tscn",
+      "object_type": 13
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_beam_a.tscn",
+      "object_type": 11
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_beam_b.tscn",
+      "object_type": 11
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_beam_c.tscn",
+      "object_type": 11
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_beam_d.tscn",
+      "object_type": 11
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_beam_e.tscn",
+      "object_type": 11
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_beam_f.tscn",
+      "object_type": 11
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_beam_g.tscn",
+      "object_type": 11
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_beam_h.tscn",
+      "object_type": 11
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_branch_a.tscn",
+      "object_type": 14
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_branch_c.tscn",
+      "object_type": 14
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_branch_d.tscn",
+      "object_type": 14
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_bush_a.tscn",
+      "object_type": 4
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_bush_b.tscn",
+      "object_type": 4
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_bush_c.tscn",
+      "object_type": 4
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_bush_d.tscn",
+      "object_type": 4
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_bush_e.tscn",
+      "object_type": 4
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_bush_f.tscn",
+      "object_type": 4
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_bush_g.tscn",
+      "object_type": 4
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_bush_h.tscn",
+      "object_type": 4
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_bush_i.tscn",
+      "object_type": 4
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_bush_j.tscn",
+      "object_type": 4
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_campfire_a.tscn",
+      "object_type": 12
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crane_a.tscn",
+      "object_type": 84
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crane_b.tscn",
+      "object_type": 84
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crane_c.tscn",
+      "object_type": 84
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crate_a.tscn",
+      "object_type": 7
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crate_b.tscn",
+      "object_type": 7
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crate_c.tscn",
+      "object_type": 7
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crate_d.tscn",
+      "object_type": 7
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crate_e.tscn",
+      "object_type": 7
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crate_f.tscn",
+      "object_type": 7
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crate_g.tscn",
+      "object_type": 7
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crate_h.tscn",
+      "object_type": 7
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crate_i.tscn",
+      "object_type": 7
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crate_j.tscn",
+      "object_type": 7
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crate_k.tscn",
+      "object_type": 7
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crate_l.tscn",
+      "object_type": 7
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_crate_m.tscn",
+      "object_type": 7
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_flowers_a.tscn",
+      "object_type": 20
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_flowers_b.tscn",
+      "object_type": 20
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_flowers_c.tscn",
+      "object_type": 20
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_goods_a.tscn",
+      "object_type": 9
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_grass_a.tscn",
+      "object_type": 2
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_grass_b.tscn",
+      "object_type": 2
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_grass_d.tscn",
+      "object_type": 2
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_grass_e.tscn",
+      "object_type": 2
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_grass_f.tscn",
+      "object_type": 2
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_smoke_a.tscn",
+      "object_type": 109
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_stone_a.tscn",
+      "object_type": 5
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_stone_b.tscn",
+      "object_type": 5
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_stone_c.tscn",
+      "object_type": 5
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_stone_d.tscn",
+      "object_type": 5
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_stone_e.tscn",
+      "object_type": 5
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_stone_f.tscn",
+      "object_type": 5
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_stone_fragments_a.tscn",
+      "object_type": 19
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_stone_g.tscn",
+      "object_type": 5
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_stone_h.tscn",
+      "object_type": 5
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_stone_i.tscn",
+      "object_type": 5
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_stone_j.tscn",
+      "object_type": 5
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_stone_k.tscn",
+      "object_type": 5
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_table_a.tscn",
+      "object_type": 8
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_table_b.tscn",
+      "object_type": 8
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_table_c.tscn",
+      "object_type": 8
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_table_d.tscn",
+      "object_type": 8
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_table_e.tscn",
+      "object_type": 8
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_table_f.tscn",
+      "object_type": 8
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_tool_axe_on_wood_a.tscn",
+      "object_type": 6
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_tool_axe_on_wood_b.tscn",
+      "object_type": 6
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_a.tscn",
+      "object_type": 3
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_ab.tscn",
+      "object_type": 3
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_ac.tscn",
+      "object_type": 3
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_b.tscn",
+      "object_type": 3
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_c.tscn",
+      "object_type": 3
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_cb.tscn",
+      "object_type": 3
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_trunk_a.tscn",
+      "object_type": 6
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_trunk_b.tscn",
+      "object_type": 6
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_trunk_c.tscn",
+      "object_type": 6
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_trunk_d.tscn",
+      "object_type": 6
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_trunk_e.tscn",
+      "object_type": 6
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_water_dock_a_a.tscn",
+      "object_type": 73
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_water_dock_a_b.tscn",
+      "object_type": 73
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_water_dock_a_c.tscn",
+      "object_type": 73
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_water_dock_a_d.tscn",
+      "object_type": 73
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_water_flower_a.tscn",
+      "object_type": 70
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_water_flower_b.tscn",
+      "object_type": 70
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_water_flower_c.tscn",
+      "object_type": 70
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_water_flower_d.tscn",
+      "object_type": 70
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_water_flower_e.tscn",
+      "object_type": 70
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_water_flower_f.tscn",
+      "object_type": 70
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_water_flower_g.tscn",
+      "object_type": 70
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_wood_pile_a.tscn",
+      "object_type": 10
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_wood_pile_b.tscn",
+      "object_type": 10
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_wood_pile_c.tscn",
+      "object_type": 10
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_wood_pile_d.tscn",
+      "object_type": 10
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woDecos/wo_wood_pile_e.tscn",
+      "object_type": 10
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/woPathObjectsRooms/wo_room_wood_wall_a.tscn",
+      "object_type": 115
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_bridge_a.tscn",
+      "object_type": 75
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_bridge_b.tscn",
+      "object_type": 76
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_fence_a.tscn",
+      "object_type": 33
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_fence_b.tscn",
+      "object_type": 34
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_fence_c.tscn",
+      "object_type": 35
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_fence_pillar_a.tscn",
+      "object_type": 61
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_fence_pillar_b.tscn",
+      "object_type": 62
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_fence_pillar_c.tscn",
+      "object_type": 63
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_palisade_wood_a.tscn",
+      "object_type": 37
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_palisade_wood_b.tscn",
+      "object_type": 38
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_pillar_a.tscn",
+      "object_type": 36
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_pillar_b.tscn",
+      "object_type": 36
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_pillar_c.tscn",
+      "object_type": 36
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_pillar_e.tscn",
+      "object_type": 36
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_a.tscn",
+      "object_type": 41
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_b.tscn",
+      "object_type": 42
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_c.tscn",
+      "object_type": 43
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_d.tscn",
+      "object_type": 44
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_e.tscn",
+      "object_type": 45
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_f.tscn",
+      "object_type": 46
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_g.tscn",
+      "object_type": 47
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_roof_thatched_b.tscn",
+      "object_type": 95
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_roof_tiles_a.tscn",
+      "object_type": 86
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_roof_tiles_a_edge_a.tscn",
+      "object_type": 87
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_roof_tiles_b.tscn",
+      "object_type": 98
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_roof_tiles_b_edge_a.tscn",
+      "object_type": 99
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_roof_wooden_a.tscn",
+      "object_type": 89
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_roof_wooden_a_edge_a.tscn",
+      "object_type": 90
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_roof_wooden_b.tscn",
+      "object_type": 100
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_roof_wooden_b_edge_a.tscn",
+      "object_type": 101
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_a.tscn",
+      "object_type": 29
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_tower_a.tscn",
+      "object_type": 30
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_tower_a_b.tscn",
+      "object_type": 30
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_tower_a_c.tscn",
+      "object_type": 30
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_tower_a_d.tscn",
+      "object_type": 30
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_tower_b.tscn",
+      "object_type": 31
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_tower_b_c.tscn",
+      "object_type": 31
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_tower_b_d.tscn",
+      "object_type": 31
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_tower_c.tscn",
+      "object_type": 32
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_tower_c_c.tscn",
+      "object_type": 32
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_tower_c_d.tscn",
+      "object_type": 32
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woUnits/woBoats/wo_boat_a.tscn",
+      "object_type": 81
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woUnits/woBoats/wo_boat_b.tscn",
+      "object_type": 81
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woUnits/woBoats/wo_boat_c.tscn",
+      "object_type": 81
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woUnits/woBoats/wo_boat_d.tscn",
+      "object_type": 81
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woUnits/woBoats/wo_boat_e.tscn",
+      "object_type": 81
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woUnits/woBoats/wo_boat_f.tscn",
+      "object_type": 81
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woUnits/wo_hand_cart_b.tscn",
+      "object_type": 27
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woUnits/wo_ox_cart_bb.tscn",
+      "object_type": 26
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/woUnits/wo_ox_cart_cb.tscn",
+      "object_type": 26
+    },
+    {
+      "filename": "res://Source/World/WorldObjects/wo_placeholder.tscn",
+      "object_type": 1
+    }
+  ],
+  "paths": [
+    {
+      "filename": "res://Source/World/Paths/PathsRoofs/par_roof_thatched.tscn",
+      "path_type": 43,
+      "count": 1,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_roof_thatched_b.tscn",
+        "object_type": 95
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/PathsRoofs/par_roof_tiles.tscn",
+      "path_type": 41,
+      "count": 982,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_roof_tiles_b.tscn",
+        "object_type": 98
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/PathsRoofs/par_roof_wooden.tscn",
+      "path_type": 42,
+      "count": 111,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_roof_wooden_b.tscn",
+        "object_type": 100
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/PathsWater/paw_river_deep.tscn",
+      "path_type": 36,
+      "count": 4,
+      "is_closed": false,
+      "line_tile": null
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_bridge_1.tscn",
+      "path_type": 34,
+      "count": 5,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_bridge_a.tscn",
+        "object_type": 75
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_bridge_2.tscn",
+      "path_type": 35,
+      "count": 2,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_bridge_b.tscn",
+        "object_type": 76
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_fence_1.tscn",
+      "path_type": 14,
+      "count": 18,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_fence_a.tscn",
+        "object_type": 33
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_fence_3.tscn",
+      "path_type": 16,
+      "count": 21,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_fence_c.tscn",
+        "object_type": 35
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_hedge.tscn",
+      "path_type": 1,
+      "count": 194,
+      "is_closed": false,
+      "line_tile": null
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_hedge_trees.tscn",
+      "path_type": 2,
+      "count": 40,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_a.tscn",
+        "object_type": 3
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_palisade_1.tscn",
+      "path_type": 9,
+      "count": 1,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_palisade_wood_a.tscn",
+        "object_type": 37
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_palisade_2.tscn",
+      "path_type": 10,
+      "count": 12,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_palisade_wood_b.tscn",
+        "object_type": 38
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_road.tscn",
+      "path_type": 17,
+      "count": 5,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_a.tscn",
+        "object_type": 41
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_road.tscn",
+      "path_type": 18,
+      "count": 52,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_b.tscn",
+        "object_type": 42
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_road.tscn",
+      "path_type": 19,
+      "count": 101,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_c.tscn",
+        "object_type": 43
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_road.tscn",
+      "path_type": 20,
+      "count": 9,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_d.tscn",
+        "object_type": 44
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_road.tscn",
+      "path_type": 21,
+      "count": 1,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_e.tscn",
+        "object_type": 45
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_road.tscn",
+      "path_type": 22,
+      "count": 184,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_f.tscn",
+        "object_type": 46
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_road.tscn",
+      "path_type": 23,
+      "count": 230,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_road_g.tscn",
+        "object_type": 47
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_stone_wall_1.tscn",
+      "path_type": 11,
+      "count": 12,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_a.tscn",
+        "object_type": 29
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_stone_wall_2.tscn",
+      "path_type": 12,
+      "count": 11,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_a.tscn",
+        "object_type": 29
+      }
+    },
+    {
+      "filename": "res://Source/World/Paths/pa_stone_wall_3.tscn",
+      "path_type": 13,
+      "count": 37,
+      "is_closed": false,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_wall_stone_a.tscn",
+        "object_type": 29
+      }
+    },
+    {
+      "filename": "res://Source/World/Plots/Plateaus/papl_plateau_plateau.tscn",
+      "path_type": 68,
+      "count": 32,
+      "is_closed": true,
+      "line_tile": null
+    },
+    {
+      "filename": "res://Source/World/Plots/PlotsLands/papl_wall.tscn",
+      "path_type": 49,
+      "count": 23,
+      "is_closed": true,
+      "line_tile": null
+    },
+    {
+      "filename": "res://Source/World/Plots/PlotsWater/papw_lake.tscn",
+      "path_type": 32,
+      "count": 8,
+      "is_closed": true,
+      "line_tile": null
+    },
+    {
+      "filename": "res://Source/World/Plots/PlotsWater/papw_ocean.tscn",
+      "path_type": 33,
+      "count": 1,
+      "is_closed": true,
+      "line_tile": null
+    },
+    {
+      "filename": "res://Source/World/Plots/Rooms/papr_bedroom.tscn",
+      "path_type": 54,
+      "count": 1,
+      "is_closed": true,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/woPathObjectsRooms/wo_room_wood_wall_a.tscn",
+        "object_type": 115
+      }
+    },
+    {
+      "filename": "res://Source/World/Plots/Rooms/papr_hallway.tscn",
+      "path_type": 56,
+      "count": 1,
+      "is_closed": true,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/woPathObjectsRooms/wo_room_wood_wall_a.tscn",
+        "object_type": 115
+      }
+    },
+    {
+      "filename": "res://Source/World/Plots/Rooms/papr_laboratory.tscn",
+      "path_type": 59,
+      "count": 1,
+      "is_closed": true,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/woPathObjectsRooms/wo_room_wood_wall_a.tscn",
+        "object_type": 115
+      }
+    },
+    {
+      "filename": "res://Source/World/Plots/pap_cottages.tscn",
+      "path_type": 28,
+      "count": 12,
+      "is_closed": true,
+      "line_tile": {
+        "filename": "res://Source/World/WorldObjects/woPathObjects/wo_fence_c.tscn",
+        "object_type": 35
+      }
+    },
+    {
+      "filename": "res://Source/World/Plots/pap_field.tscn",
+      "path_type": 26,
+      "count": 26,
+      "is_closed": true,
+      "line_tile": null
+    },
+    {
+      "filename": "res://Source/World/Plots/pap_forest.tscn",
+      "path_type": 25,
+      "count": 15,
+      "is_closed": true,
+      "line_tile": null
+    },
+    {
+      "filename": "res://Source/World/Plots/pap_lumberyard.tscn",
+      "path_type": 30,
+      "count": 3,
+      "is_closed": true,
+      "line_tile": null
+    },
+    {
+      "filename": "res://Source/World/Plots/pap_market.tscn",
+      "path_type": 27,
+      "count": 1,
+      "is_closed": true,
+      "line_tile": null
+    },
+    {
+      "filename": "res://Source/World/Plots/pap_tent_camp.tscn",
+      "path_type": 31,
+      "count": 2,
+      "is_closed": true,
+      "line_tile": null
+    }
+  ]
+}

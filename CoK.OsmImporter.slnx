@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CoK.OsmImporter.Cli/CoK.OsmImporter.Cli.csproj" />
+    <Project Path="src/CoK.OsmImporter.Core/CoK.OsmImporter.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CoK.OsmImporter.Core.Tests/CoK.OsmImporter.Core.Tests.csproj" />
+  </Folder>
+</Solution>
