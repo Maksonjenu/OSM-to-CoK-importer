@@ -85,6 +85,8 @@ cok-osm-import --osm <file.osm> --out <file.mommap> [options]
 | `--profile <full\|base>` | no | `full` | `full` = roads+water+forest/farmland+trees+buildings. `base` = same minus buildings. |
 | `--scale <metersPerUnit>` | no | `1.0` | Real-world meters represented by one CoK map unit. `--scale 10` shrinks everything 10:1. |
 | `--simplify <units>` | no | `2.0` | Line-simplification tolerance, in **output map units** (not affected by `--scale`). Raise this if CoK reports "path invalid". `0` disables it. |
+| `--max-fill <count>` | no | `2000` | Cap on baked interior-fill objects (trees, grass...) per forest/farmland plot — see [Forest fill](#forest-fill). `0` disables area fill entirely. |
+| `--max-plot-area <units²>` | no | `2000` | Splits a Plot polygon (forest/farmland/water) bigger than this into a grid of smaller pieces instead of emitting it whole — see [Forest fill](#forest-fill). `0` or negative disables splitting. |
 | `--merge <append\|replace>` | no | `append` | `append` adds imported content to `--template`'s existing objects/paths. `replace` wipes them first (keeps environment/lighting/paper settings). |
 | `--mapping <path>` | no | built-in | Use a custom tag→prefab mapping config instead of the shipped default — see [Tuning the mapping](#tuning-the-mapping). |
 | `--init-mapping <path>` | no | — | Write the built-in default mapping config to `<path>` and exit (doesn't require `--osm`/`--out`). Edit it, then pass it back via `--mapping`. |
@@ -136,14 +138,32 @@ values don't usually need touching, though you can still add more values to the 
 Run with `--unmapped-report unmapped.csv` to see exactly which tag combinations weren't matched by
 anything, so you know what's worth adding.
 
+### Forest fill
+
+CoK does **not** fill a forest plot with trees procedurally when the map loads — it bakes actual
+tree/grass object instances into the file at draw time in the editor. A plot with no baked fill
+renders as an empty, invisible zone, so this importer bakes its own fill for `forest_polygon`
+matches (`natural=wood`/`natural=scrub`/`landuse=forest`): a weighted scatter of trees, grass
+tufts, and the odd bit of deadwood, at a density/mix reverse-engineered from a real CoK-generated
+reference zone. Tunable via `mapping.json`'s `forest_polygon.fill` (the weighted asset list) and
+`forest_polygon.fill_density` (objects per output map unit², **not** scaled by `--scale` — same
+reasoning as `--simplify`, see below).
+
+`--max-fill` caps this per plot: real OSM forest polygons can cover hundreds of hectares, and
+applying CoK's own small-hand-drawn-zone density with no cap produces file sizes and object counts
+in the hundreds of thousands to millions. If a single plot's polygon is larger than
+`--max-plot-area`, it's split into a grid of smaller pieces first (CoK appears to reject or
+visually glitch on an oversized plot, "area too large" — the exact threshold isn't known, so this
+defaults to the largest size confirmed working against a real reference map); splitting leaves a
+visible seam along the grid lines but keeps the fill budget shared across the pieces rather than
+multiplying it.
+
+`landuse=farmland`/orchard/etc. (`farmland_polygon`) still import as empty, unfilled plots —
+CoK fills farmland with *rows* of a stretched object (closer to how roads work) rather than a
+random scatter, and that hasn't been implemented yet. See [TODO.md](TODO.md).
+
 ## Known limitations / things to watch for
 
-- **Forest/scrub/farmland plots may not render.** In testing, water plots (lakes) rendered
-  correctly but forest plots did not, using the exact same code path — this looks like a CoK-side
-  limitation in early-access versions rather than an importer bug, but hasn't been conclusively
-  proven. If your forest zones don't show up, check whether a hand-drawn forest zone in an
-  otherwise-untouched CoK map renders — if it doesn't either, it's not this tool. See
-  [TODO.md](TODO.md).
 - **No "ocean around an island."** CoK's ocean plot needs a hole in the middle (the island); the
   importer only supports simple, hole-free polygons right now. See [TODO.md](TODO.md).
 - **Very large imports can be genuinely huge relative to what CoK maps are meant to represent.**
@@ -154,6 +174,9 @@ anything, so you know what's worth adding.
 - **"path invalid" errors on rivers/roads/walls** almost always mean CoK's path tools are
   rejecting the geometry's point density or sharp angles — raise `--simplify` (try 4–5) and
   re-import.
+- **Occasional twisted/self-intersecting road geometry** has been observed on real OSM data —
+  not yet root-caused, likely related to simplification interacting with sharp real-world turns.
+  See [TODO.md](TODO.md).
 - **River rendering is a best-effort reconstruction, still not fully working on real data.** Its
   required fields were reverse engineered from hand-drawn test rivers in the CoK editor (not from
   official documentation) — that part is confirmed correct, but imported-from-OSM rivers still

@@ -3,6 +3,15 @@
 Things that are known-broken or known-unsupported, roughly in priority order. Feel free to turn
 any of these into a GitHub issue and/or send a PR.
 
+## Twisted/self-intersecting road geometry on real data (not yet investigated)
+
+Reported after the forest-fill work landed: some roads generated from real OSM data come out
+twisted/self-intersecting in-game. Not root-caused yet — leading suspects are `SimplifyPolyline`
+interacting badly with sharp real-world turns (a simplified point sequence could theoretically
+cross itself even when the original didn't), or the road-tile stretch formula breaking down for
+very short/sharp segments. Needs a reference file (ideally the specific problem road, before/after
+simplification) the same way the road-tile and river-fill formats were figured out.
+
 ## Rivers still misbehave on real data
 
 Confirmed working on hand-drawn test rivers (straight and curved) in the CoK editor: a river
