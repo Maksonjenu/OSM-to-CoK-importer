@@ -155,6 +155,8 @@ public class ConverterIntegrationTests
         Assert.True(tile.ScaleX > 0);
     }
 
+    // --- Spline river renderer (--rivers-as-splines fallback; RiversAsWaterPolygons = false) ---
+
     /// <summary>
     /// Regression test for a second real bug: rivers need lines_border_points (left/right bank
     /// offset curves) but NOT a placeholder rectangle in lines_objects — confirmed by hand-drawing
@@ -166,7 +168,7 @@ public class ConverterIntegrationTests
     [Fact]
     public void Convert_RiverSegmentGetsBorderPointsButEmptyLinesObjects()
     {
-        var (target, _) = RunConverter();
+        var (target, _) = RunConverter(new ConverterOptions { RiversAsWaterPolygons = false });
 
         var river = target.Paths.Single(p => p.Filename.Contains("paw_river"));
 
@@ -193,7 +195,7 @@ public class ConverterIntegrationTests
     [Fact]
     public void Convert_RiverVerticesAllGetScaleCustomXWidth()
     {
-        var (target, _) = RunConverter();
+        var (target, _) = RunConverter(new ConverterOptions { RiversAsWaterPolygons = false });
 
         var river = target.Paths.Single(p => p.Filename.Contains("paw_river"));
         Assert.All(river.PointsObjects, po => Assert.True(po.ScaleCustomX is > 0));
@@ -202,14 +204,35 @@ public class ConverterIntegrationTests
     [Fact]
     public void Convert_RiverWidthScalesDownWithMetersPerUnit()
     {
-        var (fullScale, _) = RunConverter(new ConverterOptions { MetersPerUnit = 1.0 });
-        var (halved, _) = RunConverter(new ConverterOptions { MetersPerUnit = 2.0 });
+        var (fullScale, _) = RunConverter(new ConverterOptions { MetersPerUnit = 1.0, RiversAsWaterPolygons = false });
+        var (halved, _) = RunConverter(new ConverterOptions { MetersPerUnit = 2.0, RiversAsWaterPolygons = false });
 
         var widthAt1 = fullScale.Paths.Single(p => p.Filename.Contains("paw_river")).PointsObjects[0].ScaleCustomX!.Value;
         var widthAt2 = halved.Paths.Single(p => p.Filename.Contains("paw_river")).PointsObjects[0].ScaleCustomX!.Value;
 
         Assert.Equal(widthAt1 / 2.0, widthAt2, precision: 6);
     }
+
+    // --- Water-plot river renderer (experimental branch default; RiversAsWaterPolygons = true) ---
+
+    /// <summary>
+    /// Experimental default on this branch: a river is drawn as a closed water *plot* — the same
+    /// procedural fill CoK uses for lakes — instead of the river path/spline type, since plots have
+    /// proven robust against complex, many-point OSM shapes while the spline renderer still throws
+    /// "path invalid" on real data.
+    /// </summary>
+    [Fact]
+    public void Convert_RiverAsWaterPolygon_UsesLakeAssetAndIsClosed()
+    {
+        var (target, summary) = RunConverter();
+
+        Assert.Equal(1, summary.Rivers);
+        var riverPolygon = target.Paths.Single(p => p.Filename.Contains("papw_lake"));
+        Assert.True(riverPolygon.IsClosed);
+        // a buffer ring has 2 points per centerline vertex (left side + right side)
+        Assert.Equal(4, riverPolygon.PointsObjects.Count); // 2-point centerline -> 4-point ring
+    }
+
 
     [Fact]
     public void Convert_ForestPolygonIsClosedWithDedupedRing()

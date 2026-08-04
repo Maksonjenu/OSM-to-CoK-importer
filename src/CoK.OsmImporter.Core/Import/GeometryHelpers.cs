@@ -16,6 +16,74 @@ internal static class GeometryHelpers
         new(points.Average(p => p.X), points.Average(p => p.Z));
 
     /// <summary>
+    /// Turns a centerline (e.g. a river) into a closed ring by offsetting it left/right by half
+    /// <paramref name="width"/> — a simple stroke-to-fill "buffer" with flat end caps (a mitered
+    /// join at interior vertices: the offset direction is the average of the two adjacent segment
+    /// normals). Meant to let a river be drawn as a CoK water *plot* (same procedural fill as
+    /// lakes) instead of the river *path*/spline type, which chokes on real OSM geometry
+    /// ("path invalid") — plots have proven robust against complex, many-point OSM shapes (lake
+    /// polygons import fine), so representing a river as a long thin plot sidesteps the problem
+    /// instead of fixing the spline path format.
+    /// </summary>
+    public static List<LocalPoint> BuildBufferPolygon(IReadOnlyList<LocalPoint> centerline, double width)
+    {
+        if (centerline.Count < 2)
+            return centerline.ToList();
+
+        var halfWidth = width / 2.0;
+        var n = centerline.Count;
+        var left = new LocalPoint[n];
+        var right = new LocalPoint[n];
+
+        for (var i = 0; i < n; i++)
+        {
+            double nx = 0, nz = 0;
+            if (i > 0)
+            {
+                var (sx, sz) = SegmentNormal(centerline[i - 1], centerline[i]);
+                nx += sx;
+                nz += sz;
+            }
+            if (i < n - 1)
+            {
+                var (sx, sz) = SegmentNormal(centerline[i], centerline[i + 1]);
+                nx += sx;
+                nz += sz;
+            }
+
+            var len = Math.Sqrt(nx * nx + nz * nz);
+            if (len < 1e-9)
+            {
+                nx = 0;
+                nz = 1;
+                len = 1;
+            }
+            nx /= len;
+            nz /= len;
+
+            var p = centerline[i];
+            left[i] = new LocalPoint(p.X + nx * halfWidth, p.Z + nz * halfWidth);
+            right[i] = new LocalPoint(p.X - nx * halfWidth, p.Z - nz * halfWidth);
+        }
+
+        var ring = new List<LocalPoint>(n * 2);
+        ring.AddRange(left);
+        for (var i = n - 1; i >= 0; i--)
+            ring.Add(right[i]);
+        return ring;
+    }
+
+    private static (double Nx, double Nz) SegmentNormal(LocalPoint a, LocalPoint b)
+    {
+        var dx = b.X - a.X;
+        var dz = b.Z - a.Z;
+        var len = Math.Sqrt(dx * dx + dz * dz);
+        if (len < 1e-9)
+            return (0, 1);
+        return (-dz / len, dx / len);
+    }
+
+    /// <summary>
     /// Rough placement heading for a building footprint: the direction of its longest boundary
     /// edge, in degrees. Not a rigorous "front door faces the street" computation — just gives
     /// buildings some non-uniform, footprint-informed rotation instead of all facing the same way.

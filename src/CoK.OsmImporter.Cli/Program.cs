@@ -81,7 +81,12 @@ internal static class Program
             SimplificationUnits = options.SimplificationUnits,
             MaxFillObjectsPerPolygon = options.MaxFillObjectsPerPolygon,
             MaxPlotAreaUnits = options.MaxPlotAreaUnits,
+            RiversAsWaterPolygons = options.RiversAsWaterPolygons,
         };
+
+        Console.WriteLine(options.RiversAsWaterPolygons
+            ? "Rivers will be drawn as water-body plots (experimental — pass --rivers-as-splines to use the river path type instead)."
+            : "Rivers will be drawn using the river path/spline type.");
 
         if (options.Bbox is null)
             Console.WriteLine("No --bbox/--center given: importing the whole file's extent. " +
@@ -151,6 +156,10 @@ internal static class Program
                                           0 or negative disables splitting.
               --merge <append|replace>   append (default) adds to --template's existing content;
                                           replace wipes its objects/paths first.
+              --rivers-as-splines        EXPERIMENTAL BRANCH: by default rivers are now drawn as
+                                          water-body plots (same renderer as lakes) instead of the
+                                          river path/spline type, to sidestep "path invalid" on
+                                          real OSM data. Pass this to use the old spline renderer.
               --mapping <path>           Use a custom mapping config instead of the built-in default.
               --init-mapping <path>      Write the built-in default mapping config to <path> and exit
                                           (edit it, then pass it back via --mapping).

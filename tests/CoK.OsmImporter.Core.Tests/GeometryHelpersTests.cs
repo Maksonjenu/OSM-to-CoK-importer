@@ -129,4 +129,48 @@ public class GeometryHelpersTests
         var totalArea = pieces.Sum(p => Math.Abs(GeometryHelpers.SignedArea(p)));
         Assert.Equal(7500.0, totalArea, precision: 3);
     }
+
+    [Fact]
+    public void BuildBufferPolygon_StraightTwoPointLine_ProducesExactRectangle()
+    {
+        var centerline = new List<LocalPoint> { new(0, 0), new(10, 0) };
+
+        var ring = GeometryHelpers.BuildBufferPolygon(centerline, width: 4.0);
+
+        Assert.Equal(4, ring.Count);
+        Assert.Contains(ring, p => Approximately(p, 0, 2));
+        Assert.Contains(ring, p => Approximately(p, 10, 2));
+        Assert.Contains(ring, p => Approximately(p, 10, -2));
+        Assert.Contains(ring, p => Approximately(p, 0, -2));
+    }
+
+    [Fact]
+    public void BuildBufferPolygon_EveryVertexIsHalfWidthFromCenterline()
+    {
+        var centerline = new List<LocalPoint> { new(0, 0), new(5, 5), new(15, 5) };
+        const double width = 6.0;
+
+        var ring = GeometryHelpers.BuildBufferPolygon(centerline, width);
+
+        // Every ring point must be at least half the width away from the nearest centerline
+        // vertex (a mitered offset at a bend can be slightly further, never closer).
+        foreach (var ringPoint in ring)
+        {
+            var minDist = centerline.Min(c => Math.Sqrt(Math.Pow(ringPoint.X - c.X, 2) + Math.Pow(ringPoint.Z - c.Z, 2)));
+            Assert.True(minDist >= width / 2.0 - 1e-6, $"ring point {ringPoint} was only {minDist} from the centerline (expected >= {width / 2.0})");
+        }
+    }
+
+    [Fact]
+    public void BuildBufferPolygon_PointCountIsDoubleTheCenterline()
+    {
+        var centerline = Enumerable.Range(0, 7).Select(i => new LocalPoint(i, 0)).ToList();
+
+        var ring = GeometryHelpers.BuildBufferPolygon(centerline, width: 2.0);
+
+        Assert.Equal(centerline.Count * 2, ring.Count);
+    }
+
+    private static bool Approximately(LocalPoint p, double x, double z, double tolerance = 1e-6) =>
+        Math.Abs(p.X - x) < tolerance && Math.Abs(p.Z - z) < tolerance;
 }

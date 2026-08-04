@@ -64,4 +64,14 @@ public sealed class ConverterOptions
     /// every piece within whatever CoK's real limit is. 0 or negative disables splitting.
     /// </summary>
     public double MaxPlotAreaUnits { get; init; } = 2000.0;
+
+    /// <summary>
+    /// EXPERIMENTAL: draw waterways (rivers/streams) as a CoK water *plot* (same procedural fill
+    /// as lakes — <see cref="MappingConfig.WaterPolygon"/>'s asset) instead of the river *path*
+    /// spline type. The river path format is a best-effort reconstruction that still produces
+    /// "path invalid" on real OSM data; plots have proven robust against complex, many-point OSM
+    /// shapes (lake imports work fine), so this sidesteps the problem by not using the spline path
+    /// at all. Default true on this branch — set false to fall back to the spline-based renderer.
+    /// </summary>
+    public bool RiversAsWaterPolygons { get; init; } = true;
 }

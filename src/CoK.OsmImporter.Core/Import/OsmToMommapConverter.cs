@@ -116,7 +116,21 @@ public sealed class OsmToMommapConverter
                 // down with --scale just like coordinates, so a compressed map gets proportionally
                 // narrower rivers instead of disproportionately wide ones.
                 var riverWidth = (_mapping.Waterway.Asset.Width ?? 8.0) / ctx.Options.MetersPerUnit;
-                ctx.NewPaths.Add(BuildWaterwayPath(pathPoints, _mapping.Waterway.Asset.Filename, _mapping.Waterway.Asset.PathType, ctx, riverWidth));
+                if (ctx.Options.RiversAsWaterPolygons)
+                {
+                    // Buffer the centerline into a closed ring and emit it through the same Plot
+                    // pipeline as lakes/forests — including grid-splitting for rivers long enough to
+                    // exceed MaxPlotAreaUnits (a long river's buffered ring can easily be larger than
+                    // any hand-drawn lake). Water has no configured Fill/FillDensity in mapping.json,
+                    // so this never bakes area_objects — its "fill" stays the plot's own shader/mesh
+                    // water effect, same as a real lake.
+                    var ring = GeometryHelpers.BuildBufferPolygon(pathPoints, riverWidth);
+                    EmitPolygonFeature(ring, _mapping.WaterPolygon, ctx, id);
+                }
+                else
+                {
+                    ctx.NewPaths.Add(BuildWaterwayPath(pathPoints, _mapping.Waterway.Asset.Filename, _mapping.Waterway.Asset.PathType, ctx, riverWidth));
+                }
                 ctx.Summary.Rivers++;
                 break;
 

@@ -21,6 +21,7 @@ internal sealed class CliOptions
     public double SimplificationUnits { get; private set; } = 2.0;
     public int MaxFillObjectsPerPolygon { get; private set; } = 2000;
     public double MaxPlotAreaUnits { get; private set; } = 2000.0;
+    public bool RiversAsWaterPolygons { get; private set; } = true;
 
     public static CliOptions Parse(string[] args)
     {
@@ -86,6 +87,9 @@ internal sealed class CliOptions
                     break;
                 case "--max-plot-area":
                     options.MaxPlotAreaUnits = ParseDouble(RequireValue(args, ref i, "--max-plot-area"), "--max-plot-area");
+                    break;
+                case "--rivers-as-splines":
+                    options.RiversAsWaterPolygons = false;
                     break;
                 default:
                     throw new CliArgumentException($"Unrecognized argument '{args[i]}'.");
