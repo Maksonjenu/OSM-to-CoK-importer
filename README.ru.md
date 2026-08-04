@@ -65,6 +65,25 @@ dotnet run --project src/CoK.OsmImporter.Cli -- ^
 импортирует только область радиусом 300м вокруг указанных координат, сжимает реальные метры в
 юниты карты в соотношении 10:1, и пишет `my-map.mommap`. Открой этот файл в Canvas of Kings.
 
+## Ещё примеры
+
+```
+# Весь файл, без bbox — ок для уже небольшой территории (остров, посёлок), для целого города не надо.
+dotnet run --project src/CoK.OsmImporter.Cli -- --osm island.osm --scale 10 --out island.mommap
+
+# Только ландшафт — дороги/вода/лес/деревья, без зданий.
+dotnet run --project src/CoK.OsmImporter.Cli -- --osm my-city.osm --scale 10 --profile base --out landscape-only.mommap
+
+# Добавить в карту, которую уже правишь руками в CoK, вместо старта с нуля.
+dotnet run --project src/CoK.OsmImporter.Cli -- --osm extra-district.osm --template my-in-progress-map.mommap --merge append --scale 10 --out my-in-progress-map.mommap
+
+# Всё ещё "path invalid" или "area too large"? Затяни оба параметра.
+dotnet run --project src/CoK.OsmImporter.Cli -- --osm my-city.osm --scale 10 --simplify 5 --max-plot-area 1000 --out my-map.mommap
+
+# Посмотреть, какие комбинации тегов пропущены, чтобы дополнить mapping.json.
+dotnet run --project src/CoK.OsmImporter.Cli -- --osm my-city.osm --scale 10 --unmapped-report unmapped.csv --out my-map.mommap
+```
+
 ## Справочник по флагам CLI
 
 ```

@@ -69,6 +69,25 @@ This reads `my-city.osm`, keeps `template.mommap`'s lighting/paper settings, imp
 radius around the given lat/lon, compresses real-world meters 10:1 into map units, and writes
 `my-map.mommap`. Open that file in Canvas of Kings.
 
+## More examples
+
+```
+# Whole file, no bbox — fine for an already-small area (an island, a village), skip for a whole city.
+dotnet run --project src/CoK.OsmImporter.Cli -- --osm island.osm --scale 10 --out island.mommap
+
+# Landscape only — roads/water/forest/trees, no buildings.
+dotnet run --project src/CoK.OsmImporter.Cli -- --osm my-city.osm --scale 10 --profile base --out landscape-only.mommap
+
+# Add to a map you've already been editing by hand in CoK, instead of starting fresh.
+dotnet run --project src/CoK.OsmImporter.Cli -- --osm extra-district.osm --template my-in-progress-map.mommap --merge append --scale 10 --out my-in-progress-map.mommap
+
+# Still getting "path invalid" or "area too large"? Tighten both.
+dotnet run --project src/CoK.OsmImporter.Cli -- --osm my-city.osm --scale 10 --simplify 5 --max-plot-area 1000 --out my-map.mommap
+
+# See what tag combinations got skipped, to extend mapping.json.
+dotnet run --project src/CoK.OsmImporter.Cli -- --osm my-city.osm --scale 10 --unmapped-report unmapped.csv --out my-map.mommap
+```
+
 ## CLI reference
 
 ```
