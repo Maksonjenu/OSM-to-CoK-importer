@@ -201,6 +201,32 @@ public sealed class MapPath
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<MapObject>? AreaObjects { get; set; }
 
+    /// <summary>
+    /// The row-fill angle for a farmland Plot, in degrees, using a DIFFERENT reference axis than
+    /// the `rotation_y` on individual row objects (confirmed against a real hand-drawn field: a
+    /// field with rows at rotation_y≈32.9° had layout_rotation=57.0 — off by ~90°-32.9°≈57.1°, not
+    /// a straight match). Editor-facing "which way do the rows run" control; we set it for
+    /// consistency with what a real field plot has, but it's the baked `area_objects` (in the
+    /// converter's own rotation convention) that actually determines what renders. Present only on
+    /// Plots with row fill (farmland); absent otherwise.
+    /// </summary>
+    [JsonPropertyName("layout_rotation")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? LayoutRotation { get; set; }
+
+    /// <summary>object_type of the row-fill asset used in AreaObjects — metadata a real field Plot
+    /// carries alongside its baked rows. Present only on Plots with row fill.</summary>
+    [JsonPropertyName("custom_object_object_type_row")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? CustomObjectObjectTypeRow { get; set; }
+
+    /// <summary>Index into CoK's fence-style list for a Plot whose boundary edges get a stretched
+    /// fence tile (farmland). Every real example seen so far uses 0 (the default style); present
+    /// only on Plots with a fence.</summary>
+    [JsonPropertyName("line_object_type_idx")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? LineObjectTypeIdx { get; set; }
+
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? Extra { get; set; }
 }

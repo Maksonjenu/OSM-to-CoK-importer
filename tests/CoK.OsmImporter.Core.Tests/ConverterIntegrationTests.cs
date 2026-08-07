@@ -537,6 +537,107 @@ public class ConverterIntegrationTests
         Assert.DoesNotContain(target.Objects, o => o.Filename.Contains("woBuildings"));
     }
 
+    /// <summary>
+    /// Regression test for a real bug found via a hand-drawn reference field: a farmland Plot
+    /// needs a stretched fence tile around its boundary (one per edge, same mechanism as roads/
+    /// barriers) or it just looks like an empty zone with no enclosure.
+    /// </summary>
+    [Fact]
+    public void Convert_FarmlandPolygonGetsFenceOnEveryEdge()
+    {
+        const string osm = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <osm version="0.6" generator="test">
+             <node id="90" lat="53.69200" lon="88.08000"/>
+             <node id="91" lat="53.69210" lon="88.08000"/>
+             <node id="92" lat="53.69210" lon="88.08012"/>
+             <node id="93" lat="53.69200" lon="88.08012"/>
+             <way id="109">
+              <nd ref="90"/><nd ref="91"/><nd ref="92"/><nd ref="93"/><nd ref="90"/>
+              <tag k="landuse" v="farmland"/>
+             </way>
+            </osm>
+            """;
+
+        var (target, summary) = RunConverterWithOsm(osm);
+
+        Assert.Equal(1, summary.FarmlandPolygons);
+        var field = Assert.Single(target.Paths);
+        Assert.Equal(4, field.LinesObjects.Count); // 4 edges on a quad ring
+        Assert.All(field.LinesObjects, g =>
+        {
+            var tile = Assert.Single(g.Objects);
+            Assert.Contains("wo_fence_a", tile.Filename);
+            Assert.True(tile.ScaleX > 0);
+        });
+        Assert.Equal(0, field.LineObjectTypeIdx);
+    }
+
+    /// <summary>
+    /// Regression test for the same reference field: rows of a crop-row asset baked into
+    /// area_objects, with the plot-level metadata (layout_rotation, custom_object_object_type_row)
+    /// a real field Plot also carries.
+    /// </summary>
+    [Fact]
+    public void Convert_FarmlandPolygonGetsRowFill()
+    {
+        const string osm = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <osm version="0.6" generator="test">
+             <node id="90" lat="53.69200" lon="88.08000"/>
+             <node id="91" lat="53.69210" lon="88.08000"/>
+             <node id="92" lat="53.69210" lon="88.08012"/>
+             <node id="93" lat="53.69200" lon="88.08012"/>
+             <way id="109">
+              <nd ref="90"/><nd ref="91"/><nd ref="92"/><nd ref="93"/><nd ref="90"/>
+              <tag k="landuse" v="farmland"/>
+             </way>
+            </osm>
+            """;
+
+        var (target, _) = RunConverterWithOsm(osm);
+        var catalog = AssetCatalog.AssetCatalog.LoadEmbedded();
+
+        var field = Assert.Single(target.Paths);
+        Assert.NotNull(field.AreaObjects);
+        var rows = field.AreaObjects!.Where(o => o.Filename.Contains("wo_salad_row_path")).ToList();
+        Assert.NotEmpty(rows);
+        Assert.All(rows, o => Assert.True(o.ScaleX > 0));
+
+        Assert.NotNull(field.LayoutRotation);
+        Assert.Equal(catalog.GetObjectType(rows[0].Filename), field.CustomObjectObjectTypeRow);
+    }
+
+    /// <summary>Seeded by the OSM way id, same as tree/scatter fill elsewhere — re-running with the
+    /// same input must reproduce the exact same row layout.</summary>
+    [Fact]
+    public void Convert_FarmlandRowFill_IsDeterministic()
+    {
+        const string osm = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <osm version="0.6" generator="test">
+             <node id="90" lat="53.69200" lon="88.08000"/>
+             <node id="91" lat="53.69210" lon="88.08000"/>
+             <node id="92" lat="53.69210" lon="88.08012"/>
+             <node id="93" lat="53.69200" lon="88.08012"/>
+             <way id="109">
+              <nd ref="90"/><nd ref="91"/><nd ref="92"/><nd ref="93"/><nd ref="90"/>
+              <tag k="landuse" v="farmland"/>
+             </way>
+            </osm>
+            """;
+
+        var (targetA, _) = RunConverterWithOsm(osm);
+        var (targetB, _) = RunConverterWithOsm(osm);
+
+        var fieldA = Assert.Single(targetA.Paths);
+        var fieldB = Assert.Single(targetB.Paths);
+        Assert.Equal(fieldA.LayoutRotation, fieldB.LayoutRotation);
+        Assert.Equal(
+            fieldA.AreaObjects!.Select(o => (o.PositionX, o.PositionZ, o.RotationY)),
+            fieldB.AreaObjects!.Select(o => (o.PositionX, o.PositionZ, o.RotationY)));
+    }
+
     [Fact]
     public void Convert_ReplaceMode_WipesExistingContentFirst()
     {

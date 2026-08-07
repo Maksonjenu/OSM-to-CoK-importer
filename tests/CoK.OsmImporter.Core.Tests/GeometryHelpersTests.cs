@@ -173,4 +173,64 @@ public class GeometryHelpersTests
 
     private static bool Approximately(LocalPoint p, double x, double z, double tolerance = 1e-6) =>
         Math.Abs(p.X - x) < tolerance && Math.Abs(p.Z - z) < tolerance;
+
+    [Fact]
+    public void GenerateParallelRows_AxisAlignedSquare_ProducesRowsSpanningFullWidth()
+    {
+        var ring = new List<LocalPoint> { new(0, 0), new(10, 0), new(10, 10), new(0, 10) };
+
+        var rows = GeometryHelpers.GenerateParallelRows(ring, angleDegrees: 0, spacing: 2.0);
+
+        Assert.NotEmpty(rows);
+        // rotation=0 means direction (cos(0),sin(0)) = (1,0) -> rows run along X, full width ~10.
+        Assert.All(rows, r => Assert.Equal(10.0, Math.Abs(r.B.X - r.A.X), precision: 3));
+    }
+
+    [Fact]
+    public void GenerateParallelRows_EveryRowStaysInsidePolygon()
+    {
+        var ring = new List<LocalPoint> { new(0, 0), new(10, 0), new(10, 10), new(0, 10) };
+
+        var rows = GeometryHelpers.GenerateParallelRows(ring, angleDegrees: 37, spacing: 1.5);
+
+        Assert.NotEmpty(rows);
+        Assert.All(rows, r =>
+        {
+            Assert.InRange(r.A.X, -0.01, 10.01);
+            Assert.InRange(r.A.Z, -0.01, 10.01);
+            Assert.InRange(r.B.X, -0.01, 10.01);
+            Assert.InRange(r.B.Z, -0.01, 10.01);
+        });
+    }
+
+    /// <summary>
+    /// Regression-style test for the non-convex case: a row crossing the notch of an "L" shape
+    /// must come back as two separate segments (the part inside each arm), not one segment that
+    /// cuts straight through the empty notch.
+    /// </summary>
+    [Fact]
+    public void GenerateParallelRows_NonConvexPolygon_SplitsRowAcrossTheNotch()
+    {
+        var ring = new List<LocalPoint>
+        {
+            new(0, 0), new(10, 0), new(10, 4), new(4, 4), new(4, 10), new(0, 10),
+        };
+
+        // Horizontal rows (angle 0), spaced from the bottom edge (z=0): the z=0 row is below the
+        // notch and spans the full width (x in [0,10]); the z=4 and z=8 rows are above the notch
+        // and only cross the left arm (x in [0,4]).
+        var rows = GeometryHelpers.GenerateParallelRows(ring, angleDegrees: 0, spacing: 4.0);
+
+        Assert.Contains(rows, r => Math.Abs(r.A.Z) < 0.5 && Math.Abs(r.B.X - r.A.X) > 9.0);
+        Assert.Contains(rows, r => Math.Abs(r.A.Z - 4.0) < 0.5 && Math.Abs(r.B.X - r.A.X) < 4.5);
+    }
+
+    [Fact]
+    public void GenerateParallelRows_NonPositiveSpacing_ReturnsEmpty()
+    {
+        var ring = new List<LocalPoint> { new(0, 0), new(10, 0), new(10, 10), new(0, 10) };
+
+        Assert.Empty(GeometryHelpers.GenerateParallelRows(ring, angleDegrees: 0, spacing: 0));
+        Assert.Empty(GeometryHelpers.GenerateParallelRows(ring, angleDegrees: 0, spacing: -1));
+    }
 }

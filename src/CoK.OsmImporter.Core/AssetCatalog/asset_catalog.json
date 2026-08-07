@@ -533,6 +533,10 @@
       "object_type": 63
     },
     {
+      "filename": "res://Source/World/WorldObjects/woPathObjects/wo_salad_row_path_d.tscn",
+      "object_type": 51
+    },
+    {
       "filename": "res://Source/World/WorldObjects/woPathObjects/wo_palisade_wood_a.tscn",
       "object_type": 37
     },
