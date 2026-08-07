@@ -26,6 +26,19 @@ segment needs `scale_custom_x` on every vertex placeholder (width) and `lines_bo
   as a "river" once compressed by `--scale`. Worth experimenting with much larger defaults, or
   scaling width independently of the general `--scale` factor.
 
+**On this branch (`experiment/rivers-as-water-polygons`):** sidesteps the spline "path invalid"
+problem entirely by not using the river path type at all. A river's centerline is buffered
+left/right by half its width into a closed ring (`GeometryHelpers.BuildBufferPolygon`, mitered
+joins, flat end caps) and emitted as a water *Plot* — the same `papw_lake.tscn` renderer lakes use
+— through `EmitPolygonFeature`, so it also gets grid-split against `--max-plot-area` like any other
+oversized plot. This is the default (`ConverterOptions.RiversAsWaterPolygons = true`); pass
+`--rivers-as-splines` to fall back to the old spline renderer. **Needs in-game confirmation** the
+same way forest-fill did: does a real OSM river actually render as a visible water body now, and
+does splitting a long river's buffer ring avoid "area too large"? The buffer math itself is unit
+tested (`GeometryHelpersTests.BuildBufferPolygon_*`) but has not been eyeballed in the CoK editor
+yet. If confirmed, the still-open width question above becomes even more relevant — a water plot
+that's only 8m wide may read as a puddle, not a river.
+
 ## Forest plots (RESOLVED on `experiment/forest-area-fill`, needs in-game confirmation)
 
 Root cause found via a user-provided reference file (a forest zone hand-drawn — and separately,
