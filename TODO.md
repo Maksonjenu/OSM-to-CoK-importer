@@ -140,7 +140,22 @@ Opt-in only (omit `--elevation-grid` to skip entirely) since it's the only netwo
 in the whole pipeline; a failed lookup (network down, API changed) logs a warning and the rest of
 the map still saves without terrain.
 
-**Known limitations / not attempted:**
+**Confirmed bad in-game (2026-08-08) — redesign planned, not started:** user tested the square-grid
+approach in the CoK editor and called it "ugly" — blocky squares covering the whole bbox is the
+wrong shape language for terrain. Two concrete directions given for the redo (user will give the
+go-ahead separately before work starts):
+1. **Threshold, not full coverage.** Only emit a plateau where elevation deviates *significantly*
+   from the surrounding baseline — i.e. detect actual hills/mountains in the sampled data and skip
+   everywhere else, instead of tiling every cell across the whole bbox regardless of how flat it is
+   (the current "skip near-zero cells" check only skips cells near the bbox *minimum*, not cells
+   that are simply unremarkable relative to their neighbors).
+2. **Freeform shape, not a fixed square grid.** A hill's footprint should be an arbitrary polygon
+   contouring the actual high-elevation area — the same shape freedom forest/water/farmland
+   polygons already have — not a rectangle. Likely direction: derive a polygon per elevation
+   region from the sampled grid (something like a contour/isoline trace or a flood-fill of
+   above-threshold cells merged into one ring) rather than one plot per cell.
+
+**Known limitations / not attempted (context for the redesign above):**
 - The result is deliberately a blocky/terraced grid, not a smooth slope — matches how CoK's own
   Plateau system works, but a real hillside will look like a wargaming-terrain staircase rather
   than a gradient. No attempt at blending/smoothing between adjacent cells of different heights.
