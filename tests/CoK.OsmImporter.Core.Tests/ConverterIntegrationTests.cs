@@ -233,6 +233,24 @@ public class ConverterIntegrationTests
         Assert.Equal(4, riverPolygon.PointsObjects.Count); // 2-point centerline -> 4-point ring
     }
 
+    /// <summary>
+    /// A river's buffered ring goes through the same EmitPolygonFeature pipeline as forest/water
+    /// plots, so a long river (its ring area scales with length * width) must also respect
+    /// MaxPlotAreaUnits and split into a grid of pieces instead of one oversized plot — same "area
+    /// too large" concern that motivated splitting for forest polygons.
+    /// </summary>
+    [Fact]
+    public void Convert_OversizedRiverAsWaterPolygon_SplitsIntoMultiplePaths()
+    {
+        var (target, summary) = RunConverter(new ConverterOptions { MaxPlotAreaUnits = 100.0 });
+
+        var riverPolygons = target.Paths.Where(p => p.Filename.Contains("papw_lake")).ToList();
+
+        Assert.True(riverPolygons.Count > 1, "a river buffer ring far bigger than a 100-unit² cap should split.");
+        Assert.All(riverPolygons, p => Assert.True(p.IsClosed));
+        Assert.All(riverPolygons, p => Assert.Empty(p.AreaObjects ?? new List<MapObject>()));
+        Assert.Equal(1, summary.Rivers); // still counted once at the OSM-feature level, regardless of split pieces
+    }
 
     [Fact]
     public void Convert_ForestPolygonIsClosedWithDedupedRing()
