@@ -82,6 +82,19 @@ public class ConverterIntegrationTests
         return (target, summary);
     }
 
+    private static (MommapDocument Target, Reporting.ImportSummary Summary) RunConverterWithOsm(string osmXml, ConverterOptions? options = null)
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(osmXml));
+        var osm = OsmXmlParser.Parse(stream);
+        var mapping = MappingConfigLoader.LoadDefault();
+        var catalog = AssetCatalog.AssetCatalog.LoadEmbedded();
+        var converter = new OsmToMommapConverter(mapping, catalog);
+        var target = MommapDocument.CreateBlank();
+
+        var summary = converter.Convert(osm, target, options ?? new ConverterOptions());
+        return (target, summary);
+    }
+
     [Fact]
     public void Convert_EmitsOneFeaturePerCategory()
     {
@@ -355,6 +368,89 @@ public class ConverterIntegrationTests
         var lake = Assert.Single(target.Paths);
         Assert.NotNull(lake.AreaObjects);
         Assert.Empty(lake.AreaObjects!);
+    }
+
+    /// <summary>
+    /// Regression test for a real bug found on real OSM data: real rivers/lakes are very often
+    /// mapped as a multipolygon relation whose "outer" ring is split across several way segments
+    /// (e.g. the actual "Средняя Невка"/Middle Nevka river in Saint Petersburg is 9 separate outer
+    /// ways) rather than one single closed way. The old relation handling only supported exactly
+    /// one outer way and silently dropped everything else as "too complex". This asserts the
+    /// assembled ring uses the real OSM vertices (not a synthetic buffer) and covers every distinct
+    /// node from both segments.
+    /// </summary>
+    [Fact]
+    public void Convert_MultiWayOuterRelation_AssemblesRingFromRealVertices()
+    {
+        const string osm = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <osm version="0.6" generator="test">
+             <node id="60" lat="53.68700" lon="88.05000"/>
+             <node id="61" lat="53.68705" lon="88.05005"/>
+             <node id="62" lat="53.68705" lon="88.05010"/>
+             <node id="63" lat="53.68700" lon="88.05012"/>
+             <node id="64" lat="53.68695" lon="88.05005"/>
+             <way id="105">
+              <nd ref="60"/><nd ref="61"/><nd ref="62"/>
+             </way>
+             <way id="106">
+              <nd ref="62"/><nd ref="63"/><nd ref="64"/><nd ref="60"/>
+             </way>
+             <relation id="200">
+              <member type="way" ref="105" role="outer"/>
+              <member type="way" ref="106" role="outer"/>
+              <tag k="type" v="multipolygon"/>
+              <tag k="natural" v="water"/>
+              <tag k="name" v="Test River"/>
+             </relation>
+            </osm>
+            """;
+
+        var (target, summary) = RunConverterWithOsm(osm);
+
+        Assert.Equal(1, summary.WaterPolygons);
+        var polygon = Assert.Single(target.Paths);
+        Assert.True(polygon.IsClosed);
+        // 5 distinct ring vertices (60,61,62,63,64) from the two joined way segments — not a
+        // synthetic 4-point buffer rectangle.
+        Assert.Equal(5, polygon.PointsObjects.Count);
+    }
+
+    /// <summary>
+    /// A river's `waterway=river` centerline and its real `natural=water` bank polygon are
+    /// commonly two separate OSM elements sharing the same `name`. Once the real polygon is
+    /// emitted (see the test above), also buffering the centerline into a synthetic water plot
+    /// would just double-draw the same river — see FindNamedWaterPolygons/OsmToMommapConverter.
+    /// </summary>
+    [Fact]
+    public void Convert_NamedWaterwayMatchingRealPolygon_SkipsSyntheticBuffer()
+    {
+        const string osm = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <osm version="0.6" generator="test">
+             <node id="60" lat="53.68700" lon="88.05000"/>
+             <node id="61" lat="53.68705" lon="88.05005"/>
+             <node id="62" lat="53.68705" lon="88.05010"/>
+             <node id="63" lat="53.68700" lon="88.05012"/>
+             <way id="105">
+              <nd ref="60"/><nd ref="61"/><nd ref="62"/><nd ref="63"/><nd ref="60"/>
+              <tag k="natural" v="water"/>
+              <tag k="name" v="Test River"/>
+             </way>
+             <node id="70" lat="53.69000" lon="88.06000"/>
+             <node id="71" lat="53.69005" lon="88.06005"/>
+             <way id="107">
+              <nd ref="70"/><nd ref="71"/>
+              <tag k="waterway" v="river"/>
+              <tag k="name" v="Test River"/>
+             </way>
+            </osm>
+            """;
+
+        var (target, summary) = RunConverterWithOsm(osm);
+
+        Assert.Equal(1, summary.Rivers); // the OSM river feature is still counted...
+        Assert.Single(target.Paths); // ...but only the real polygon's path was actually emitted.
     }
 
     [Fact]

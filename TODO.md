@@ -27,17 +27,44 @@ segment needs `scale_custom_x` on every vertex placeholder (width) and `lines_bo
   scaling width independently of the general `--scale` factor.
 
 **On this branch (`experiment/rivers-as-water-polygons`):** sidesteps the spline "path invalid"
-problem entirely by not using the river path type at all. A river's centerline is buffered
-left/right by half its width into a closed ring (`GeometryHelpers.BuildBufferPolygon`, mitered
-joins, flat end caps) and emitted as a water *Plot* — the same `papw_lake.tscn` renderer lakes use
-— through `EmitPolygonFeature`, so it also gets grid-split against `--max-plot-area` like any other
-oversized plot. This is the default (`ConverterOptions.RiversAsWaterPolygons = true`); pass
-`--rivers-as-splines` to fall back to the old spline renderer. **Needs in-game confirmation** the
-same way forest-fill did: does a real OSM river actually render as a visible water body now, and
-does splitting a long river's buffer ring avoid "area too large"? The buffer math itself is unit
-tested (`GeometryHelpersTests.BuildBufferPolygon_*`) but has not been eyeballed in the CoK editor
-yet. If confirmed, the still-open width question above becomes even more relevant — a water plot
-that's only 8m wide may read as a puddle, not a river.
+problem entirely by not using the river path type at all — rivers become water *Plots* (the same
+`papw_lake.tscn` renderer lakes use) instead. Two sources of geometry, in priority order:
+
+1. **Real OSM water-body vertices, when available (preferred).** Many rivers are mapped twice in
+   OSM: a `waterway=river` centerline for routing, plus a separate `natural=water` closed way or
+   multipolygon relation with the actual bank-to-bank shape. Real-world multipolygons for rivers
+   are very often split across several "outer" way segments rather than one closed way — e.g. the
+   actual "Средняя Невка" (Middle Nevka) in the StoneIslandSPB test data is 9 separate outer ways.
+   `OsmToMommapConverter.AssembleRings` joins these end-to-end (matching shared node ids, flipping
+   direction as needed) into one or more closed rings, which then go through the normal
+   `EmitPolygonFeature` pipeline — real vertex count and shape, not an approximation. Verified
+   against StoneIslandSPB: water polygons went from 4 (only simple single-way lakes) to 13, with
+   the biggest newly-captured shapes running 9–29 vertices — real river outlines, not 4-point
+   rectangles. `FindNamedWaterPolygons` collects the `name` of every such real shape up front so
+   the matching `waterway=river` centerline (same `name` tag) is skipped instead of drawing a
+   redundant synthetic strip on top of it.
+2. **Synthetic buffer, as a fallback.** For a `waterway=river`/`stream` line with no same-named
+   real polygon in the data (common for minor streams/drains, which OSM usually only maps as a
+   centerline), the centerline is buffered left/right by half its width into a closed ring
+   (`GeometryHelpers.BuildBufferPolygon`, mitered joins, flat end caps) — a rough approximation,
+   better than nothing.
+
+Either way the result goes through `EmitPolygonFeature`, so it also gets grid-split against
+`--max-plot-area` like any other oversized plot. This is the default
+(`ConverterOptions.RiversAsWaterPolygons = true`); pass `--rivers-as-splines` to fall back to the
+old spline renderer entirely (skips both of the above). **Needs in-game confirmation** the same way
+forest-fill did: does a real river now render as a visible, correctly-shaped water body, and does
+splitting a large one avoid "area too large"? Unit tested (`GeometryHelpersTests.BuildBufferPolygon_*`,
+`ConverterIntegrationTests.Convert_MultiWayOuterRelation_*`,
+`Convert_NamedWaterwayMatchingRealPolygon_*`) but not yet eyeballed in the CoK editor. The
+name-matching dedup is a heuristic (not geometric containment) — an unnamed river/polygon pair
+won't be matched and both get drawn, redundantly but harmlessly. If confirmed, the still-open width
+question above still applies to the *fallback* case — a buffered plot only 8m wide may read as a
+puddle, not a river.
+
+**Side benefit:** the same multi-outer-way ring assembly applies to forest/farmland relations too,
+not just water — on StoneIslandSPB, forest/scrub polygons went from 48 to 51 and skipped "too
+complex" relations dropped from 210 to 201, for free.
 
 ## Forest plots (RESOLVED on `experiment/forest-area-fill`, needs in-game confirmation)
 

@@ -38,13 +38,14 @@ public sealed class OsmToMommapConverter
             NewPaths = new List<MapPath>(),
             NextUid = target.Info.LastUid + 1,
             InheritedAreaIdx = target.Paths.Count > 0 ? target.Paths[0].ClickAndPlacingWo.AssignedPathAreaIdx : 0,
+            NamedWaterPolygonNames = FindNamedWaterPolygons(osm),
         };
 
         foreach (var way in osm.Ways.Values)
         {
             if (way.Tags.Count == 0)
                 continue;
-            if (!TryResolveWayPoints(way, osm, projector, bbox, out var points))
+            if (!TryResolveWayPoints(way.NodeIds, osm, projector, bbox, out var points))
                 continue;
 
             ClassifyAndEmitWay(way.Id, way.Tags, way.IsClosed, points, simplifyEpsilon, ctx);
@@ -93,6 +94,41 @@ public sealed class OsmToMommapConverter
         public required List<MapPath> NewPaths { get; init; }
         public int NextUid { get; set; }
         public int InheritedAreaIdx { get; init; }
+        public required IReadOnlySet<string> NamedWaterPolygonNames { get; init; }
+    }
+
+    /// <summary>
+    /// Real rivers are very often mapped twice in OSM: a <c>waterway=river</c> centerline (for
+    /// routing/network purposes) plus a separate <c>natural=water</c> closed way or multipolygon
+    /// relation carrying the actual bank-to-bank shape, sharing the same `name`. Once that real
+    /// shape is emitted (see ProcessRelation/ClassifyAndEmitWay's WaterPolygon case), buffering the
+    /// centerline into a second, synthetic water plot on top of it would just double-draw the same
+    /// river. This collects the `name` of every water-polygon-shaped feature up front so the
+    /// centerline case can skip itself when a same-named real shape exists. Matching by name is a
+    /// heuristic (not a geometric containment check) but real-world river tagging is consistent
+    /// enough for this to work in practice; an unnamed river/polygon pair just won't be matched and
+    /// falls back to drawing both, same as before.
+    /// </summary>
+    private HashSet<string> FindNamedWaterPolygons(OsmDocument osm)
+    {
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var way in osm.Ways.Values)
+        {
+            if (way.IsClosed && _classifier.Classify(way.Tags, isClosed: true) == WayFeatureKind.WaterPolygon
+                && way.Tags.TryGetValue("name", out var wayName) && !string.IsNullOrWhiteSpace(wayName))
+                names.Add(wayName);
+        }
+
+        foreach (var relation in osm.Relations.Values)
+        {
+            if (relation.Tags.TryGetValue("type", out var relType) && relType == "multipolygon"
+                && _classifier.Classify(relation.Tags, isClosed: true) == WayFeatureKind.WaterPolygon
+                && relation.Tags.TryGetValue("name", out var relName) && !string.IsNullOrWhiteSpace(relName))
+                names.Add(relName);
+        }
+
+        return names;
     }
 
     private void ClassifyAndEmitWay(
@@ -116,21 +152,28 @@ public sealed class OsmToMommapConverter
                 // down with --scale just like coordinates, so a compressed map gets proportionally
                 // narrower rivers instead of disproportionately wide ones.
                 var riverWidth = (_mapping.Waterway.Asset.Width ?? 8.0) / ctx.Options.MetersPerUnit;
-                if (ctx.Options.RiversAsWaterPolygons)
+                var hasRealWaterShape = tags.TryGetValue("name", out var riverName)
+                    && ctx.NamedWaterPolygonNames.Contains(riverName);
+                if (ctx.Options.RiversAsWaterPolygons && !hasRealWaterShape)
                 {
                     // Buffer the centerline into a closed ring and emit it through the same Plot
                     // pipeline as lakes/forests — including grid-splitting for rivers long enough to
                     // exceed MaxPlotAreaUnits (a long river's buffered ring can easily be larger than
                     // any hand-drawn lake). Water has no configured Fill/FillDensity in mapping.json,
                     // so this never bakes area_objects — its "fill" stays the plot's own shader/mesh
-                    // water effect, same as a real lake.
+                    // water effect, same as a real lake. Only a fallback for rivers with no real OSM
+                    // water-body shape (see FindNamedWaterPolygons) — a rough approximation from the
+                    // centerline + a configured width, used only when nothing better is available.
                     var ring = GeometryHelpers.BuildBufferPolygon(pathPoints, riverWidth);
                     EmitPolygonFeature(ring, _mapping.WaterPolygon, ctx, id);
                 }
-                else
+                else if (!ctx.Options.RiversAsWaterPolygons)
                 {
                     ctx.NewPaths.Add(BuildWaterwayPath(pathPoints, _mapping.Waterway.Asset.Filename, _mapping.Waterway.Asset.PathType, ctx, riverWidth));
                 }
+                // else: a same-named real water-body polygon already covers this river (emitted
+                // from its own natural=water way/relation) — drawing a synthetic buffer on top of
+                // it would just double the same water plot, so skip.
                 ctx.Summary.Rivers++;
                 break;
 
@@ -182,50 +225,124 @@ public sealed class OsmToMommapConverter
         if (relation.Tags.Count <= 1)
             return; // nothing but the "type" tag — nothing to classify
 
-        var outerMembers = relation.Members
-            .Where(m => m.Type == OsmRelationMemberType.Way && m.Role == "outer")
-            .ToList();
-        if (outerMembers.Count != 1)
-        {
-            ctx.Summary.SkippedComplexRelations++;
-            return;
-        }
-
-        if (!osm.Ways.TryGetValue(outerMembers[0].Ref, out var outerWay) || !outerWay.IsClosed)
-        {
-            ctx.Summary.SkippedComplexRelations++;
-            return;
-        }
-
-        if (!TryResolveWayPoints(outerWay, osm, projector, bbox, out var points))
-            return;
-
-        var simplified = GeometryHelpers.SimplifyPolyline(points, simplifyEpsilon);
         var kind = _classifier.Classify(relation.Tags, isClosed: true);
-        var uniquePoints = GeometryHelpers.DedupeClosingPoint(simplified);
-        switch (kind)
+        if (kind is not (WayFeatureKind.WaterPolygon or WayFeatureKind.ForestPolygon or WayFeatureKind.FarmlandPolygon))
         {
-            case WayFeatureKind.WaterPolygon:
-                ctx.Summary.WaterPolygons += EmitPolygonFeature(uniquePoints, _mapping.WaterPolygon, ctx, relation.Id);
-                break;
-            case WayFeatureKind.ForestPolygon:
-                ctx.Summary.ForestPolygons += EmitPolygonFeature(uniquePoints, _mapping.ForestPolygon, ctx, relation.Id);
-                break;
-            case WayFeatureKind.FarmlandPolygon:
-                ctx.Summary.FarmlandPolygons += EmitPolygonFeature(uniquePoints, _mapping.FarmlandPolygon, ctx, relation.Id);
-                break;
-            default:
+            ctx.Summary.SkippedComplexRelations++;
+            return;
+        }
+
+        // Real-world water/forest/farmland areas are very often split across several "outer" way
+        // segments instead of one closed way (e.g. a river's bank line edited by many people over
+        // years) — a real example: "Средняя Невка" (Middle Nevka) is 9 separate outer ways that
+        // only form a ring once joined end-to-end. Inner rings (holes/islands) are still not
+        // supported — see TODO.md.
+        var outerWays = new List<OsmWay>();
+        foreach (var member in relation.Members)
+        {
+            if (member.Type != OsmRelationMemberType.Way || member.Role != "outer")
+                continue;
+            if (!osm.Ways.TryGetValue(member.Ref, out var way))
+            {
                 ctx.Summary.SkippedComplexRelations++;
-                break;
+                return; // referenced way missing from this extract; can't reliably assemble a ring
+            }
+            outerWays.Add(way);
+        }
+        if (outerWays.Count == 0)
+        {
+            ctx.Summary.SkippedComplexRelations++;
+            return;
+        }
+
+        var rings = AssembleRings(outerWays);
+        if (rings.Count == 0)
+        {
+            ctx.Summary.SkippedComplexRelations++;
+            return;
+        }
+
+        for (var i = 0; i < rings.Count; i++)
+        {
+            if (!TryResolveWayPoints(rings[i], osm, projector, bbox, out var points))
+                continue;
+
+            var simplified = GeometryHelpers.SimplifyPolyline(points, simplifyEpsilon);
+            var uniquePoints = GeometryHelpers.DedupeClosingPoint(simplified);
+            var seedId = relation.Id + i; // vary the fill seed per ring, same idea as split pieces
+            switch (kind)
+            {
+                case WayFeatureKind.WaterPolygon:
+                    ctx.Summary.WaterPolygons += EmitPolygonFeature(uniquePoints, _mapping.WaterPolygon, ctx, seedId);
+                    break;
+                case WayFeatureKind.ForestPolygon:
+                    ctx.Summary.ForestPolygons += EmitPolygonFeature(uniquePoints, _mapping.ForestPolygon, ctx, seedId);
+                    break;
+                case WayFeatureKind.FarmlandPolygon:
+                    ctx.Summary.FarmlandPolygons += EmitPolygonFeature(uniquePoints, _mapping.FarmlandPolygon, ctx, seedId);
+                    break;
+            }
         }
     }
 
-    private static bool TryResolveWayPoints(
-        OsmWay way, OsmDocument osm, EquirectangularProjector projector, BoundingBox bbox, out List<LocalPoint> points)
+    /// <summary>
+    /// Joins a multipolygon relation's "outer" way segments end-to-end into one or more closed
+    /// rings, by matching shared OSM node ids at each way's endpoints (flipping a segment's
+    /// direction when it only matches reversed). A way that's already closed on its own (e.g. a
+    /// separate island-like outer piece) becomes its own ring immediately. A segment that can't be
+    /// connected to close its ring (missing/incomplete source data) is dropped rather than emitted
+    /// as a bogus open shape — same "best effort" spirit as the rest of v1's relation handling.
+    /// </summary>
+    private static List<List<long>> AssembleRings(IReadOnlyList<OsmWay> outerWays)
     {
-        points = new List<LocalPoint>(way.NodeIds.Count);
+        var remaining = outerWays.Select(w => w.NodeIds.ToList()).ToList();
+        var rings = new List<List<long>>();
+
+        while (remaining.Count > 0)
+        {
+            var current = remaining[0];
+            remaining.RemoveAt(0);
+
+            bool progress;
+            do
+            {
+                progress = false;
+                if (current[0] == current[^1])
+                    break; // closed already
+
+                for (var i = 0; i < remaining.Count; i++)
+                {
+                    var seg = remaining[i];
+                    if (seg[0] == current[^1])
+                        current.AddRange(seg.Skip(1));
+                    else if (seg[^1] == current[^1])
+                        current.AddRange(((IEnumerable<long>)seg).Reverse().Skip(1));
+                    else if (seg[^1] == current[0])
+                        current.InsertRange(0, seg.Take(seg.Count - 1));
+                    else if (seg[0] == current[0])
+                        current.InsertRange(0, ((IEnumerable<long>)seg).Reverse().Take(seg.Count - 1));
+                    else
+                        continue;
+
+                    remaining.RemoveAt(i);
+                    progress = true;
+                    break;
+                }
+            } while (progress);
+
+            if (current.Count >= 4 && current[0] == current[^1])
+                rings.Add(current);
+        }
+
+        return rings;
+    }
+
+    private static bool TryResolveWayPoints(
+        IReadOnlyList<long> nodeIds, OsmDocument osm, EquirectangularProjector projector, BoundingBox bbox, out List<LocalPoint> points)
+    {
+        points = new List<LocalPoint>(nodeIds.Count);
         var anyInBbox = false;
-        foreach (var nodeId in way.NodeIds)
+        foreach (var nodeId in nodeIds)
         {
             if (!osm.Nodes.TryGetValue(nodeId, out var node))
             {
