@@ -103,9 +103,14 @@ algorithm, structurally more work than the tree scatter.
 CoK has a `papw_ocean.tscn` plot type, but there's no way to express "everything outside this
 landmass is ocean" from OSM data with the current importer — that needs proper multipolygon
 support with **inner rings** (holes), i.e. drawing the ocean as the map's outer bounds with the
-island's coastline as a hole. Current relation handling only supports the single-outer-ring,
-no-holes case (see `OsmToMommapConverter.ProcessRelation`); islands/lakes-with-islands just import
-as if the hole weren't there.
+island's coastline as a hole. `OsmToMommapConverter.ProcessRelation`/`AssembleRings` now join
+multiple **outer** way segments into a ring (see the rivers-as-water-polygons fix), but inner-role
+members are still ignored outright — islands/lakes-with-islands import as if the hole weren't
+there. Real-world scale of the problem, found via `grecia.osm`: the Aegean Sea itself is mapped as
+a single `place=sea` multipolygon relation with 2055 outer + 1768 inner way members covering the
+whole region — even with holes supported, a relation that size is its own scaling problem
+(`AssembleRings`' ring-joining is O(n²) per relation) and `place=sea` isn't even a tag this importer
+currently recognizes as water at all (`water_polygon.natural_values` only has `water`/`wetland`).
 
 ## Hedges are unsupported
 
@@ -140,7 +145,33 @@ attempted (see "real terrain/elevation" limitation below) — this only fixes wh
 
 Not just oceans — any `natural=water`/`natural=wood`/`landuse=farmland` relation with an inner
 ring (a pond with an island, a forest with a clearing cut out) currently imports the outer ring
-only, ignoring the hole.
+only, ignoring the hole. Worse for anything NOT water/forest/farmland: `ProcessRelation` only
+processes relations that classify as one of those three kinds at all, so a `building=yes`
+multipolygon (a real example from `grecia.osm`: a building with an inner courtyard, 1 outer + 1
+inner way) isn't imported even outer-ring-only — it's dropped completely, counted as a "skipped
+complex relation". Building multipolygons aren't common in OSM data but do exist for larger/complex
+footprints (courtyards, connected building complexes).
+
+## More unmapped tag categories (found via grecia.osm — candidates for mapping.json)
+
+Real-world OSM data uses plenty of tags this importer has no rule for at all (not a bug, just
+uncovered ground — a `--unmapped-report` CSV always shows these; use it on your own data to find
+more). From `grecia.osm` (68 unmapped combinations total), the most common by frequency:
+
+- `natural=bare_rock` (16×), `natural=beach`/`natural=sand` (2× each), `natural=cliff` — bare
+  terrain types with no CoK equivalent picked yet.
+- `natural=coastline` (11×) — an OSM line-only marker for where land meets sea, not an area; almost
+  certainly should stay unmapped rather than get a fill rule (there's no "land" polygon to draw).
+- `landuse=grass` (7×), `leisure=garden` (6×) — plain groundcover, no plot type assigned.
+- `leisure=pitch;sport=soccer`/`sport=basketball` (3×), `leisure=marina` (a `type=multipolygon`
+  relation, separately counted as a skipped relation above), `landuse=cemetery`, `place=square` —
+  more specific land uses with no obvious CoK prefab match.
+- `area=yes;man_made=pier` (4×), `area=yes;man_made=breakwater` (2×) — waterfront structures.
+- `barrier=retaining_wall` (2×) — a barrier subtype not in the `barriers` mapping (currently only
+  hedge/wall/city_wall/fence).
+- `route=ferry` relations (3×), `aeroway=helipad` (1×) — transit infrastructure with no path/point
+  equivalent at all; probably out of scope for a tabletop-RPG-map importer rather than something to
+  add.
 
 ## Building placement fidelity
 
