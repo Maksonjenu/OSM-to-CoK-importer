@@ -36,6 +36,9 @@ public class MappingConfigTests
         foreach (var road in config.Roads.Values)
             catalog.GetPath(config.RoadFilename, road.PathType);
 
+        if (config.Bridge is { } bridge)
+            catalog.GetPath(bridge.Filename, bridge.PathType);
+
         catalog.GetPath(config.Waterway.Asset.Filename, config.Waterway.Asset.PathType);
         catalog.GetPath(config.WaterPolygon.Asset.Filename, config.WaterPolygon.Asset.PathType);
         catalog.GetPath(config.ForestPolygon.Asset.Filename, config.ForestPolygon.Asset.PathType);
@@ -60,5 +63,14 @@ public class MappingConfigTests
 
         Assert.NotEmpty(config.ForestPolygon.Fill);
         Assert.True(config.ForestPolygon.FillDensity is > 0);
+    }
+
+    [Fact]
+    public void DefaultMapping_BridgeIsConfiguredAndDistinctFromPlainRoad()
+    {
+        var config = MappingConfigLoader.LoadDefault();
+
+        Assert.NotNull(config.Bridge);
+        Assert.NotEqual(config.RoadFilename, config.Bridge!.Filename);
     }
 }

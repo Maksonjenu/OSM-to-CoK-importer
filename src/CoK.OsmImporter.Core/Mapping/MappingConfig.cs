@@ -112,6 +112,18 @@ public sealed class MappingConfig
     [JsonPropertyName("roads")]
     public Dictionary<string, RoadRule> Roads { get; init; } = new();
 
+    /// <summary>
+    /// A way classified as a Road that also carries a truthy `bridge` tag (`bridge=yes`,
+    /// `viaduct`, ... — anything except absent/`no`) uses this fixed path asset instead of
+    /// road_filename/the highway-hierarchy path_type. CoK's bridge prefabs (pa_bridge_1/2.tscn) are
+    /// completely different filenames from pa_road.tscn, not just another path_type variant of it
+    /// — same reason barriers get their own PathAssetRule instead of reusing the road prefab.
+    /// Optional: null (the default for a custom mapping.json predating this field) just means
+    /// bridges render as a plain road, same as before this was added.
+    /// </summary>
+    [JsonPropertyName("bridge")]
+    public PathAssetRule? Bridge { get; init; }
+
     /// <summary>barrier=value -> fixed path asset (hedge/wall/fence/city wall...).</summary>
     [JsonPropertyName("barriers")]
     public Dictionary<string, PathAssetRule> Barriers { get; init; } = new();

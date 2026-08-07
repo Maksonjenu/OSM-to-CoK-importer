@@ -8,6 +8,7 @@ public sealed record UnmappedFeature(string ElementType, long Id, string TagsSum
 public sealed class ImportSummary
 {
     public int Roads;
+    public int Bridges;
     public int Rivers;
     public int WaterPolygons;
     public int ForestPolygons;
@@ -28,7 +29,7 @@ public sealed class ImportSummary
         {
             string.Create(ci, $"bbox: lat[{UsedBbox.MinLat:F6},{UsedBbox.MaxLat:F6}] lon[{UsedBbox.MinLon:F6},{UsedBbox.MaxLon:F6}] " +
             $"(~{UsedBbox.WidthMeters:F0}m x {UsedBbox.HeightMeters:F0}m)"),
-            $"roads: {Roads}",
+            $"roads: {Roads}" + (Bridges > 0 ? $" ({Bridges} bridges)" : ""),
             $"rivers/streams: {Rivers}",
             $"water polygons: {WaterPolygons}",
             $"forest/scrub polygons: {ForestPolygons}",

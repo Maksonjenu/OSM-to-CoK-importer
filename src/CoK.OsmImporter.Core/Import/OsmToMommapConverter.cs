@@ -206,9 +206,22 @@ public sealed class OsmToMommapConverter
                 break;
 
             case WayFeatureKind.Road:
-                var highwayValue = tags.GetValueOrDefault("highway", "default");
-                var roadRule = _mapping.Roads.TryGetValue(highwayValue, out var rr) ? rr : _mapping.Roads["default"];
-                ctx.NewPaths.Add(BuildLinePath(pathPoints, _mapping.RoadFilename, roadRule.PathType, ctx));
+                // A bridge is a completely different prefab from a plain road (pa_bridge_1/2.tscn
+                // vs. pa_road.tscn), not just another path_type of the same one — same reason
+                // barriers get their own filename. `bridge` is present with a truthy, non-"no"
+                // value (yes/viaduct/aqueduct/...) on the actual highway way in OSM, same way as
+                // any other tag — no separate feature/relation involved.
+                if (tags.TryGetValue("bridge", out var bridgeValue) && bridgeValue != "no" && _mapping.Bridge is { } bridgeAsset)
+                {
+                    ctx.NewPaths.Add(BuildLinePath(pathPoints, bridgeAsset.Filename, bridgeAsset.PathType, ctx));
+                    ctx.Summary.Bridges++;
+                }
+                else
+                {
+                    var highwayValue = tags.GetValueOrDefault("highway", "default");
+                    var roadRule = _mapping.Roads.TryGetValue(highwayValue, out var rr) ? rr : _mapping.Roads["default"];
+                    ctx.NewPaths.Add(BuildLinePath(pathPoints, _mapping.RoadFilename, roadRule.PathType, ctx));
+                }
                 ctx.Summary.Roads++;
                 break;
 

@@ -168,6 +168,67 @@ public class ConverterIntegrationTests
         Assert.True(tile.ScaleX > 0);
     }
 
+    /// <summary>
+    /// Regression test for a real bug: a way tagged highway=* + bridge=yes was rendering as a
+    /// plain road (pa_road.tscn) — the bridge tag was never checked at all. CoK's bridge prefabs
+    /// (pa_bridge_1/2.tscn) are separate filenames from the road prefab, not just another
+    /// path_type variant of it.
+    /// </summary>
+    [Fact]
+    public void Convert_HighwayWithBridgeTag_UsesBridgeAssetNotPlainRoad()
+    {
+        const string osm = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <osm version="0.6" generator="test">
+             <node id="80" lat="53.69200" lon="88.07000"/>
+             <node id="81" lat="53.69205" lon="88.07005"/>
+             <way id="108">
+              <nd ref="80"/><nd ref="81"/>
+              <tag k="highway" v="primary"/>
+              <tag k="bridge" v="yes"/>
+             </way>
+            </osm>
+            """;
+
+        var (target, summary) = RunConverterWithOsm(osm);
+
+        Assert.Equal(1, summary.Roads);
+        Assert.Equal(1, summary.Bridges);
+        var bridge = Assert.Single(target.Paths);
+        Assert.Contains("pa_bridge", bridge.Filename);
+        Assert.DoesNotContain("pa_road", bridge.Filename);
+        var tile = Assert.Single(bridge.LinesObjects[0].Objects);
+        Assert.Contains("wo_bridge", tile.Filename);
+    }
+
+    /// <summary>
+    /// `bridge=no` is explicit real-world OSM data (not just an absent tag) and must NOT be
+    /// treated as a bridge — a naive `tags.ContainsKey("bridge")` check would get this wrong.
+    /// </summary>
+    [Fact]
+    public void Convert_HighwayWithBridgeNo_StaysAPlainRoad()
+    {
+        const string osm = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <osm version="0.6" generator="test">
+             <node id="80" lat="53.69200" lon="88.07000"/>
+             <node id="81" lat="53.69205" lon="88.07005"/>
+             <way id="108">
+              <nd ref="80"/><nd ref="81"/>
+              <tag k="highway" v="primary"/>
+              <tag k="bridge" v="no"/>
+             </way>
+            </osm>
+            """;
+
+        var (target, summary) = RunConverterWithOsm(osm);
+
+        Assert.Equal(1, summary.Roads);
+        Assert.Equal(0, summary.Bridges);
+        var road = Assert.Single(target.Paths);
+        Assert.Contains("pa_road", road.Filename);
+    }
+
     // --- Spline river renderer (--rivers-as-splines fallback; RiversAsWaterPolygons = false) ---
 
     /// <summary>

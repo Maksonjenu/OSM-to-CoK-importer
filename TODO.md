@@ -114,13 +114,27 @@ single stretched tile) that hasn't been reverse engineered. `barrier=hedge` curr
 `pa_hedge.tscn` but never gets segment content, so it won't be visible. Low priority — real-world
 OSM data rarely tags much as `barrier=hedge` compared to `fence`/`wall`.
 
-## Roads/buildings mapping is a guess, needs community eyes
+## Roads/buildings/bridge mapping is a guess, needs community eyes
 
 `default-mapping.json`'s `roads` section (which `path_type` 17–23 maps to which OSM `highway=`
 class) and `buildings` section (which prefab fits which OSM tag) were both filled in without being
 able to see the CoK editor directly — see the `notes` section at the top of that file. If you've
 actually looked at what each `path_type`/prefab looks like in-game, PRs tightening these up are
 very welcome.
+
+**Bridges (on `experiment/rivers-as-water-polygons`, RESOLVED but guessed asset):** a way tagged
+`highway=*` + a truthy `bridge` value (`yes`/`viaduct`/`aqueduct`/... — anything but absent/`no`)
+was rendering as a plain road; the `bridge` tag was never checked at all, so `pa_road.tscn` was
+used even where a bridge belongs. Fixed by adding a `bridge` entry to `MappingConfig` (a way tagged
+as a bridge now uses `pa_bridge_1.tscn`, path_type 34, instead of the road prefab — CoK's bridge
+meshes are a different filename entirely, not just another road path_type). Verified on
+StoneIslandSPB: 63 of 72 `bridge=*`-tagged ways in the source data now correctly resolve to the
+bridge asset (the gap is bridge tags on non-`highway` ways, e.g. railways, which this importer
+doesn't classify as roads at all — separate, lower-priority scope). Which of the two bridge prefabs
+(`pa_bridge_1.tscn` path_type 34, or `pa_bridge_2.tscn` path_type 35) actually looks right, and
+whether it's worth splitting by road class/width, still needs eyes in the actual editor — same
+"guessed, needs community eyes" caveat as roads/buildings. No elevation/deck-height modeling is
+attempted (see "real terrain/elevation" limitation below) — this only fixes which prefab gets used.
 
 ## Multipolygon relations with holes generally
 
