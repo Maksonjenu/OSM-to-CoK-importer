@@ -163,6 +163,17 @@ public sealed class MappingConfig
     [JsonPropertyName("farmland_polygon")]
     public required TagDrivenPathRule FarmlandPolygon { get; init; }
 
+    /// <summary>
+    /// EXPERIMENTAL: the Plateau plot asset used for baked elevation terrain (see
+    /// ConverterOptions.ElevationGridUnits) — CoK has exactly one plateau prefab in the reference
+    /// data (papl_plateau_plateau.tscn, path_type 68), so this is a fixed asset rather than a
+    /// tag-driven list like roads/buildings. Optional: null (the default for a custom mapping.json
+    /// predating this field, or if the built-in default is somehow missing it) just disables
+    /// elevation even if --elevation-grid is passed.
+    /// </summary>
+    [JsonPropertyName("elevation")]
+    public PathAssetRule? Elevation { get; init; }
+
     [JsonPropertyName("trees")]
     public List<WeightedAsset> Trees { get; init; } = new();
 

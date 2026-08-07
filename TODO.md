@@ -92,11 +92,71 @@ report, not yet re-verified), and the visible seam along grid lines is an accept
 fixed (no attempt at hiding/blending the cut). If it doesn't fully clear the warning, the real
 threshold may be lower than 2000 — try lowering `--max-plot-area`.
 
-Farmland (`pap_field.tscn`) uses a completely different fill mechanic — not a scatter, but *rows*
-of a stretched `wo_salad_row_path_a.tscn` object (same stretch-tile idea as roads, arranged in
-parallel lines across the polygon). Not implemented — farmland plots still import with empty
-`area_objects` and won't render. Lower priority than forest was; needs a row-direction + spacing
-algorithm, structurally more work than the tree scatter.
+Farmland (`pap_field.tscn`) uses a completely different fill mechanic from forest — see the
+dedicated section below, now implemented on `experiment/elevation`.
+
+## Farmland fence + crop rows (RESOLVED on `experiment/elevation`, needs in-game confirmation)
+
+Root-caused via a second user-provided reference file (`elevation_and_farms.mommap`, a real
+hand-drawn field): a farmland Plot needs its boundary edges filled with a stretched
+`wo_fence_a.tscn` tile (one per edge — the exact same stretched-tile mechanism roads/barriers
+already use, just applied to the Plot's own ring) *and* its interior filled with rows of
+`wo_salad_row_path_d.tscn` baked into `area_objects` (object_type 51 — missing from the asset
+catalog before this, added). Without both, a farmland plot imports as an empty, unenclosed zone,
+same "not generated at load time" issue forest had before its fix.
+
+Row placement is an explicit **approximation**, not a byte-for-byte replica of CoK's own row
+generator: the reference field's rows sit at a `rotation_y` of ~32.9° while the Plot's own
+`layout_rotation` field says 57.0° (a different angle reference, not simply the same value under
+another name — see `MapPath.LayoutRotation`'s doc comment), and some rows are split into 2-3
+collinear pieces for reasons not fully understood (possibly a max single-mesh-length cap around
+~11.4 units — not replicated). `GeometryHelpers.GenerateParallelRows` instead picks a seeded-random
+angle and lays out evenly-spaced rows clipped to the polygon boundary (works on non-convex shapes),
+each clipped span becoming exactly one object regardless of length. Reuses
+`ConverterOptions.MaxFillObjectsPerPolygon`/`--max-fill` as a flat per-piece cap so a large real
+farmland polygon can't run away the object count, same concern forest fill had. **Needs in-game
+confirmation** — verified only against the unit tests and a real-data smoke run (Cantia_Italy.osm:
+44 fields, 1614 total row objects, no field left with zero rows), not eyeballed in the CoK editor.
+
+## Elevation / terrain (EXPERIMENTAL, new on `experiment/elevation`)
+
+CoK has no smooth heightmap to import real terrain into — confirmed against the same
+`elevation_and_farms.mommap` reference file: elevation is entirely independent flat *Plateau*
+plots (`papl_plateau_plateau.tscn`, path_type 68), each a closed polygon with its own
+`height_changing_position_y` (values seen: 2 up to a ~30 cap, absent = flat/height 0). There is no
+concept of one continuous sloped surface — a "hill" in CoK is a stack/grid of separately-drawn flat
+plateaus.
+
+Implemented: `OsmToMommapConverter.AddElevationPlateausAsync` tiles the map's bbox into a grid of
+square cells (`--elevation-grid <units>`, output map units, not scaled by `--scale`), samples
+real-world elevation at each cell's center via the free [Open-Meteo Elevation
+API](https://open-meteo.com/en/docs/elevation-api) (Copernicus DEM GLO-90, ~90m resolution, no API
+key needed, batched requests — chosen over paid alternatives like TessaDEM for a first pass with no
+signup friction), and emits one Plateau per cell raised to `(elevation - bboxMinElevation) /
+--elevation-scale` (default 5 real meters per height unit, independent of the horizontal `--scale`
+since a plateau's height cap of ~30 units has nothing to do with map compression). Cells within
+~0.05 units of the bbox's lowest point are skipped (a height-0 plateau changes nothing visible).
+Opt-in only (omit `--elevation-grid` to skip entirely) since it's the only network-dependent step
+in the whole pipeline; a failed lookup (network down, API changed) logs a warning and the rest of
+the map still saves without terrain.
+
+**Known limitations / not attempted:**
+- The result is deliberately a blocky/terraced grid, not a smooth slope — matches how CoK's own
+  Plateau system works, but a real hillside will look like a wargaming-terrain staircase rather
+  than a gradient. No attempt at blending/smoothing between adjacent cells of different heights.
+- Open-Meteo's ~90m resolution is coarse for small maps — a `--elevation-grid` smaller than that
+  will sample the same underlying DEM pixel for multiple adjacent cells, producing visually
+  identical/stepped-together plateaus where finer real variation exists. TessaDEM (paid,
+  ~€0.001/request) or a downloaded SRTM/Copernicus GLO-30 tile sampled offline would both give
+  finer resolution — worth revisiting if the coarse grid doesn't look good in-game.
+- No in-game confirmation yet that a grid of many adjacent/abutting Plateau plots actually looks
+  reasonable (vs. e.g. z-fighting, gaps, or CoK enforcing some minimum spacing between plots) — only
+  verified via unit tests (fake elevation provider, no network) and one real end-to-end run against
+  the live Open-Meteo API (Cantia_Italy.osm, `--elevation-grid 50`: 13 plateaus, heights 1.2-16.2,
+  plausible for that hilly region).
+- Doesn't affect existing roads/buildings/water at all — everything else still sits at `y = 0`
+  regardless of the terrain grid drawn under it, so a road crossing a raised plateau will currently
+  clip through/float above it rather than following the new terrain. Not attempted in this pass.
 
 ## Sea/ocean around islands not supported
 

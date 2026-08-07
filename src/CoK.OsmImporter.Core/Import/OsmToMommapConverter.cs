@@ -1,4 +1,5 @@
 using CoK.OsmImporter.Core.AssetCatalog;
+using CoK.OsmImporter.Core.Elevation;
 using CoK.OsmImporter.Core.Geo;
 using CoK.OsmImporter.Core.Mapping;
 using CoK.OsmImporter.Core.Mommap;
@@ -84,6 +85,107 @@ public sealed class OsmToMommapConverter
             target.Info.LastUid = ctx.NextUid - 1;
 
         return ctx.Summary;
+    }
+
+    /// <summary>
+    /// EXPERIMENTAL: bakes terrain as a grid of independent Plateau plots, each raised to its
+    /// cell's real-world elevation (fetched via <paramref name="elevationProvider"/>) relative to
+    /// the lowest sampled point in the bbox — see ConverterOptions.ElevationGridUnits/ElevationScale
+    /// and MappingConfig.Elevation. CoK has no smooth heightmap to import into (confirmed against a
+    /// hand-drawn reference file: elevation is entirely independent flat Plateau footprints), so
+    /// this is deliberately a stepped/terraced result, not a smooth slope. A separate async pass
+    /// from <see cref="Convert"/> since it's the only network-dependent step in the whole pipeline;
+    /// call it after Convert (passing its returned <see cref="ImportSummary.UsedBbox"/>) so the grid
+    /// lines up with the same projection origin the rest of the map used. Returns how many plateaus
+    /// were actually added (flat cells near the bbox's minimum elevation are skipped — a height-0
+    /// plateau changes nothing visible).
+    /// </summary>
+    public async Task<int> AddElevationPlateausAsync(
+        MommapDocument target, ConverterOptions options, BoundingBox bbox, IElevationProvider elevationProvider,
+        CancellationToken cancellationToken = default)
+    {
+        if (options.ElevationGridUnits is not > 0 || _mapping.Elevation is not { } elevationAsset)
+            return 0;
+
+        _catalog.GetPath(elevationAsset.Filename, elevationAsset.PathType);
+
+        var projector = new EquirectangularProjector(bbox.Center, options.MetersPerUnit);
+        var cellSize = options.ElevationGridUnits.Value;
+
+        var corner1 = projector.Project(new GeoPoint(bbox.MinLat, bbox.MinLon));
+        var corner2 = projector.Project(new GeoPoint(bbox.MaxLat, bbox.MaxLon));
+        var minX = Math.Min(corner1.X, corner2.X);
+        var maxX = Math.Max(corner1.X, corner2.X);
+        var minZ = Math.Min(corner1.Z, corner2.Z);
+        var maxZ = Math.Max(corner1.Z, corner2.Z);
+
+        var cells = new List<(LocalPoint Center, LocalPoint Min, LocalPoint Max)>();
+        for (var x = minX; x < maxX; x += cellSize)
+        {
+            for (var z = minZ; z < maxZ; z += cellSize)
+            {
+                var cellMin = new LocalPoint(x, z);
+                var cellMax = new LocalPoint(Math.Min(x + cellSize, maxX), Math.Min(z + cellSize, maxZ));
+                cells.Add((new LocalPoint((cellMin.X + cellMax.X) / 2.0, (cellMin.Z + cellMax.Z) / 2.0), cellMin, cellMax));
+            }
+        }
+        if (cells.Count == 0)
+            return 0;
+
+        var geoPoints = cells.Select(c => projector.Unproject(c.Center)).ToList();
+        var elevations = await elevationProvider.GetElevationsAsync(geoPoints, cancellationToken).ConfigureAwait(false);
+        var baseline = elevations.Min();
+
+        var ctx = new EmitContext
+        {
+            Options = options,
+            Summary = new ImportSummary { UsedBbox = bbox },
+            NewObjects = new List<MapObject>(),
+            NewPaths = new List<MapPath>(),
+            NextUid = target.Info.LastUid + 1,
+            InheritedAreaIdx = target.Paths.Count > 0 ? target.Paths[0].ClickAndPlacingWo.AssignedPathAreaIdx : 0,
+            NamedWaterPolygonNames = new HashSet<string>(),
+        };
+
+        for (var i = 0; i < cells.Count; i++)
+        {
+            var heightUnits = Math.Min(30.0, (elevations[i] - baseline) / options.ElevationScale);
+            if (heightUnits < 0.05)
+                continue; // flat / near-baseline ground — an empty plateau adds nothing visible
+
+            var ring = new List<LocalPoint>
+            {
+                cells[i].Min,
+                new(cells[i].Max.X, cells[i].Min.Z),
+                cells[i].Max,
+                new(cells[i].Min.X, cells[i].Max.Z),
+            };
+            ctx.NewPaths.Add(BuildPlateauPath(ring, elevationAsset, ctx, heightUnits));
+        }
+
+        target.Paths.AddRange(ctx.NewPaths);
+        if (ctx.NewPaths.Count > 0)
+            target.Info.LastUid = ctx.NextUid - 1;
+
+        return ctx.NewPaths.Count;
+    }
+
+    private static MapPath BuildPlateauPath(IReadOnlyList<LocalPoint> ring, PathAssetRule asset, EmitContext ctx, double heightUnits)
+    {
+        var closedRing = ring.Append(ring[0]).ToList();
+        return new MapPath
+        {
+            Filename = asset.Filename,
+            PathType = asset.PathType,
+            IsClosed = true,
+            MainPoints = closedRing.Select(p => new PathPoint(p.X, p.Z)).ToList(),
+            PointsObjects = ring.Select((p, i) => new PointObject { PositionX = p.X, PositionZ = p.Z, AssignedPathPointIdx = i }).ToList(),
+            LinesObjects = Enumerable.Range(0, ring.Count).Select(_ => new LineObjectGroup()).ToList(),
+            LinesCustomScales = Enumerable.Repeat(1.0, ring.Count).ToList(),
+            AreaObjects = new List<MapObject>(),
+            HeightChangingPositionY = heightUnits,
+            ClickAndPlacingWo = BuildClickAndPlacingWo(ring, ctx),
+        };
     }
 
     private sealed class EmitContext

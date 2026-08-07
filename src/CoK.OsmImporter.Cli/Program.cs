@@ -1,4 +1,5 @@
 using CoK.OsmImporter.Core.AssetCatalog;
+using CoK.OsmImporter.Core.Elevation;
 using CoK.OsmImporter.Core.Geo;
 using CoK.OsmImporter.Core.Import;
 using CoK.OsmImporter.Core.Mapping;
@@ -9,7 +10,7 @@ namespace CoK.OsmImporter.Cli;
 
 internal static class Program
 {
-    private static int Main(string[] args)
+    private static async Task<int> Main(string[] args)
     {
         if (args.Length == 0 || args.Contains("--help") || args.Contains("-h"))
         {
@@ -39,7 +40,7 @@ internal static class Program
 
         try
         {
-            return Run(options);
+            return await Run(options);
         }
         catch (AssetNotFoundException ex)
         {
@@ -53,7 +54,7 @@ internal static class Program
         }
     }
 
-    private static int Run(CliOptions options)
+    private static async Task<int> Run(CliOptions options)
     {
         Console.WriteLine($"Parsing OSM file '{options.OsmPath}'...");
         var osm = OsmXmlParser.Parse(options.OsmPath!);
@@ -82,6 +83,8 @@ internal static class Program
             MaxFillObjectsPerPolygon = options.MaxFillObjectsPerPolygon,
             MaxPlotAreaUnits = options.MaxPlotAreaUnits,
             RiversAsWaterPolygons = options.RiversAsWaterPolygons,
+            ElevationGridUnits = options.ElevationGridUnits,
+            ElevationScale = options.ElevationScale,
         };
 
         Console.WriteLine(options.RiversAsWaterPolygons
@@ -95,6 +98,23 @@ internal static class Program
 
         var converter = new OsmToMommapConverter(mapping, catalog);
         var summary = converter.Convert(osm, target, converterOptions);
+
+        if (options.ElevationGridUnits is not null)
+        {
+            Console.WriteLine($"Fetching elevation data from Open-Meteo for a {options.ElevationGridUnits}-unit grid " +
+                               "(experimental — network-dependent, --elevation-scale controls real-meters-per-height-unit)...");
+            try
+            {
+                using var httpClient = new HttpClient();
+                var elevationProvider = new OpenMeteoElevationProvider(httpClient);
+                var plateaus = await converter.AddElevationPlateausAsync(target, converterOptions, summary.UsedBbox, elevationProvider);
+                Console.WriteLine($"Added {plateaus} elevation plateaus.");
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException)
+            {
+                Console.Error.WriteLine($"warning: elevation lookup failed ({ex.Message}) — continuing without terrain.");
+            }
+        }
 
         MommapSerializer.Save(target, options.OutPath!);
         Console.WriteLine($"Wrote '{options.OutPath}' ({target.Objects.Count} objects, {target.Paths.Count} paths).");
@@ -160,6 +180,18 @@ internal static class Program
                                           water-body plots (same renderer as lakes) instead of the
                                           river path/spline type, to sidestep "path invalid" on
                                           real OSM data. Pass this to use the old spline renderer.
+              --elevation-grid <units>   EXPERIMENTAL, opt-in: bake terrain as a grid of Plateau
+                                          plots this many map units on a side (NOT scaled by
+                                          --scale), each raised to its cell's real-world elevation
+                                          (fetched from Open-Meteo — requires network access).
+                                          CoK has no smooth heightmap, so this is a stepped/
+                                          terraced result, not a smooth slope. Omit to disable
+                                          elevation entirely (default).
+              --elevation-scale <m>      Real-world meters of elevation per one CoK plateau-height
+                                          unit (independent of --scale). Default 5.0. A Plateau's
+                                          height caps around 30 units, so raise this for
+                                          mountainous terrain, lower it for subtle hills. Only
+                                          meaningful with --elevation-grid.
               --mapping <path>           Use a custom mapping config instead of the built-in default.
               --init-mapping <path>      Write the built-in default mapping config to <path> and exit
                                           (edit it, then pass it back via --mapping).

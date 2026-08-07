@@ -41,5 +41,15 @@ public sealed class EquirectangularProjector
         return new LocalPoint(eastMeters * _unitsPerMeter, -northMeters * _unitsPerMeter);
     }
 
+    /// <summary>Inverse of <see cref="Project"/> — local units back to lat/lon. Used to figure out
+    /// which real-world coordinate a generated grid cell (e.g. an elevation-sampling cell) falls
+    /// on, since those are built directly in local map-unit space.</summary>
+    public GeoPoint Unproject(LocalPoint p)
+    {
+        var eastMeters = p.X / _unitsPerMeter;
+        var northMeters = -p.Z / _unitsPerMeter;
+        return new GeoPoint(_origin.Lat + northMeters / MetersPerDegreeLat, _origin.Lon + eastMeters / _metersPerDegreeLon);
+    }
+
     private static double DegToRad(double deg) => deg * Math.PI / 180.0;
 }

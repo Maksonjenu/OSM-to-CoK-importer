@@ -74,4 +74,26 @@ public sealed class ConverterOptions
     /// at all. Default true on this branch — set false to fall back to the spline-based renderer.
     /// </summary>
     public bool RiversAsWaterPolygons { get; init; } = true;
+
+    /// <summary>
+    /// EXPERIMENTAL: size of one elevation-grid cell, in output map units (NOT scaled by --scale —
+    /// same "aesthetic/output-facing, not real-world" reasoning as SimplificationUnits) — the bbox
+    /// is tiled into square cells this size, each becoming its own independent
+    /// papl_plateau_plateau.tscn Plot raised to that cell's sampled elevation (CoK has no smooth
+    /// heightmap; a Plateau plot is a flat raised area with its own footprint — see TODO.md). Null
+    /// (the default) disables elevation entirely — it requires a network call per import
+    /// (OpenMeteoElevationProvider) and is opt-in via the CLI's --elevation flag.
+    /// </summary>
+    public double? ElevationGridUnits { get; init; }
+
+    /// <summary>
+    /// Real-world meters of elevation represented by one CoK plateau-height unit. A Plateau's
+    /// height_changing_position_y caps out around 30 (see MappingConfig notes/TODO.md) while real
+    /// terrain can vary by tens to hundreds of meters within a single map — this needs its own
+    /// independent scale from the horizontal --scale, same reasoning as why SimplificationUnits/
+    /// RowSpacing aren't tied to --scale either, just inverted (this one IS about a real-world
+    /// quantity, just a different one than horizontal distance). Only meaningful when
+    /// <see cref="ElevationGridUnits"/> is set.
+    /// </summary>
+    public double ElevationScale { get; init; } = 5.0;
 }

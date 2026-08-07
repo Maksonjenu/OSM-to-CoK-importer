@@ -72,4 +72,20 @@ public class ProjectorTests
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new EquirectangularProjector(new GeoPoint(0, 0), metersPerUnit: 0));
     }
+
+    [Theory]
+    [InlineData(53.68, 88.05, 1.0)]
+    [InlineData(0.0, 0.0, 1.0)]
+    [InlineData(60.0, 30.0, 10.0)]
+    public void Unproject_IsTheInverseOfProject(double lat, double lon, double metersPerUnit)
+    {
+        var origin = new GeoPoint(lat, lon);
+        var projector = new EquirectangularProjector(origin, metersPerUnit);
+        var target = new GeoPoint(lat + 0.01, lon - 0.02);
+
+        var roundTripped = projector.Unproject(projector.Project(target));
+
+        Assert.Equal(target.Lat, roundTripped.Lat, precision: 9);
+        Assert.Equal(target.Lon, roundTripped.Lon, precision: 9);
+    }
 }

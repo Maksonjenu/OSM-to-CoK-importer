@@ -44,6 +44,9 @@ public class MappingConfigTests
         catalog.GetPath(config.ForestPolygon.Asset.Filename, config.ForestPolygon.Asset.PathType);
         catalog.GetPath(config.FarmlandPolygon.Asset.Filename, config.FarmlandPolygon.Asset.PathType);
 
+        if (config.Elevation is { } elevation)
+            catalog.GetPath(elevation.Filename, elevation.PathType);
+
         foreach (var rule in new[] { config.Waterway, config.WaterPolygon, config.ForestPolygon, config.FarmlandPolygon })
             foreach (var fillAsset in rule.Fill)
                 catalog.GetObjectType(fillAsset.Filename);
@@ -90,5 +93,13 @@ public class MappingConfigTests
         Assert.NotNull(config.FarmlandPolygon.FenceFilename);
         Assert.NotNull(config.FarmlandPolygon.RowFilename);
         Assert.True(config.FarmlandPolygon.RowSpacing is > 0);
+    }
+
+    [Fact]
+    public void DefaultMapping_ElevationIsConfigured()
+    {
+        var config = MappingConfigLoader.LoadDefault();
+
+        Assert.NotNull(config.Elevation);
     }
 }

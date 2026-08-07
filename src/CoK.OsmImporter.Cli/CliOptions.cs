@@ -22,6 +22,8 @@ internal sealed class CliOptions
     public int MaxFillObjectsPerPolygon { get; private set; } = 2000;
     public double MaxPlotAreaUnits { get; private set; } = 2000.0;
     public bool RiversAsWaterPolygons { get; private set; } = true;
+    public double? ElevationGridUnits { get; private set; }
+    public double ElevationScale { get; private set; } = 5.0;
 
     public static CliOptions Parse(string[] args)
     {
@@ -90,6 +92,16 @@ internal sealed class CliOptions
                     break;
                 case "--rivers-as-splines":
                     options.RiversAsWaterPolygons = false;
+                    break;
+                case "--elevation-grid":
+                    options.ElevationGridUnits = ParseDouble(RequireValue(args, ref i, "--elevation-grid"), "--elevation-grid");
+                    if (options.ElevationGridUnits <= 0)
+                        throw new CliArgumentException("--elevation-grid must be positive.");
+                    break;
+                case "--elevation-scale":
+                    options.ElevationScale = ParseDouble(RequireValue(args, ref i, "--elevation-scale"), "--elevation-scale");
+                    if (options.ElevationScale <= 0)
+                        throw new CliArgumentException("--elevation-scale must be positive.");
                     break;
                 default:
                     throw new CliArgumentException($"Unrecognized argument '{args[i]}'.");
