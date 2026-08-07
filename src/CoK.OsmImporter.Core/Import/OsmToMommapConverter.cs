@@ -534,6 +534,15 @@ public sealed class OsmToMommapConverter
 
         var closedRing = uniquePoints.Append(uniquePoints[0]).ToList();
         var segmentCount = uniquePoints.Count;
+        // maxFillObjects (when given) is EmitPolygonFeature's per-piece SCATTER budget, derived
+        // from FillDensity — 0 for farmland, which has no FillDensity configured at all. Rows are
+        // a separate fill mechanism and must not inherit that unrelated 0; they get their own flat
+        // cap straight from ctx.Options (still respects --max-fill 0 = "disable all area fill").
+        var rowFill = BuildRowFillObjects(uniquePoints, rule, fillSeedId, ctx.Options.MaxFillObjectsPerPolygon, out var layoutRotation);
+        var fenceTile = rule?.FenceFilename is { } fenceFilename
+            ? new LineTile(fenceFilename, _catalog.GetObjectType(fenceFilename))
+            : (LineTile?)null;
+
         return new MapPath
         {
             Filename = filename,
@@ -541,13 +550,76 @@ public sealed class OsmToMommapConverter
             IsClosed = true,
             MainPoints = closedRing.Select(p => new PathPoint(p.X, p.Z)).ToList(),
             PointsObjects = uniquePoints.Select((p, i) => new PointObject { PositionX = p.X, PositionZ = p.Z, AssignedPathPointIdx = i }).ToList(),
-            LinesObjects = Enumerable.Range(0, segmentCount).Select(_ => new LineObjectGroup()).ToList(),
+            // Empty groups render fine for plots CoK fills procedurally/by baked fill alone
+            // (forest/water); a fence-configured plot (farmland) gets a stretched tile per
+            // boundary edge instead, the same mechanism roads/barriers use.
+            LinesObjects = BuildLineObjectGroups(closedRing, segmentCount, fenceTile),
             LinesCustomScales = Enumerable.Repeat(1.0, segmentCount).ToList(),
             // Always present (even empty) on every real Plot in template.mommap — CoK never omits
             // this key for a Plot type, only for line-type paths (roads/rivers/barriers).
-            AreaObjects = BuildAreaFillObjects(uniquePoints, rule, fillSeedId, maxFillObjects ?? ctx.Options.MaxFillObjectsPerPolygon),
+            AreaObjects = BuildAreaFillObjects(uniquePoints, rule, fillSeedId, maxFillObjects ?? ctx.Options.MaxFillObjectsPerPolygon)
+                .Concat(rowFill)
+                .ToList(),
+            LayoutRotation = layoutRotation,
+            CustomObjectObjectTypeRow = rule?.RowFilename is { } rowFilename ? _catalog.GetObjectType(rowFilename) : null,
+            LineObjectTypeIdx = fenceTile is not null ? 0 : null,
             ClickAndPlacingWo = BuildClickAndPlacingWo(uniquePoints, ctx),
         };
+    }
+
+    /// <summary>
+    /// Approximates CoK's own row-fill baking for a farmland Plot: a seeded-random row angle (see
+    /// MapPath.LayoutRotation for why the stored field uses a different reference than this), then
+    /// evenly-spaced parallel row objects clipped to the polygon boundary. NOT a byte-for-byte
+    /// replica of CoK's own generator — a real hand-drawn field shows some rows split into 2-3
+    /// collinear pieces for reasons not fully understood; here each clipped span becomes exactly
+    /// one stretched object regardless of length. If that produces more rows than
+    /// <paramref name="maxCount"/> (see ConverterOptions.MaxFillObjectsPerPolygon — the same
+    /// runaway-object-count concern as forest fill applies to a large real farmland polygon),
+    /// spacing is widened just enough to fit the budget and regenerated once, rather than cropping
+    /// the field unevenly.
+    /// </summary>
+    private List<MapObject> BuildRowFillObjects(
+        IReadOnlyList<LocalPoint> ring, TagDrivenPathRule? rule, long seedId, int maxCount, out double? layoutRotationDegrees)
+    {
+        layoutRotationDegrees = null;
+        if (rule?.RowFilename is not { } rowFilename || rule.RowSpacing is not > 0 || ring.Count < 3)
+            return new List<MapObject>();
+
+        var rng = WeightedPicker.CreateSeededRandom(seedId, salt: 7);
+        var angleDegrees = rng.NextDouble() * 180.0;
+        layoutRotationDegrees = angleDegrees;
+
+        var rows = GeometryHelpers.GenerateParallelRows(ring, angleDegrees, rule.RowSpacing.Value);
+        if (maxCount > 0 && rows.Count > maxCount)
+        {
+            var widenedSpacing = rule.RowSpacing.Value * rows.Count / maxCount;
+            rows = GeometryHelpers.GenerateParallelRows(ring, angleDegrees, widenedSpacing);
+        }
+        else if (maxCount <= 0)
+        {
+            rows.Clear();
+        }
+
+        var objectType = _catalog.GetObjectType(rowFilename);
+        var objects = new List<MapObject>(rows.Count);
+        foreach (var (a, b) in rows)
+        {
+            var (midX, midZ, length, rotation) = SegmentMetrics(a, b);
+            objects.Add(new MapObject
+            {
+                Filename = rowFilename,
+                PositionX = midX,
+                PositionZ = midZ,
+                RotationY = rotation,
+                ScaleX = length,
+                ObjectType = objectType,
+                AssignedPathAreaIdx = 0,
+                CustomDataGSize = length,
+            });
+        }
+
+        return objects;
     }
 
     /// <summary>

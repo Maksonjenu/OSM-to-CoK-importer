@@ -344,4 +344,97 @@ internal static class GeometryHelpers
         var t = (z - a.Z) / (b.Z - a.Z);
         return new LocalPoint(a.X + t * (b.X - a.X), z);
     }
+
+    /// <summary>
+    /// Approximates CoK's own "crop row" fill for a farmland Plot: evenly-spaced parallel line
+    /// segments at <paramref name="angleDegrees"/> (same rotation convention as everywhere else —
+    /// <c>rotation = -atan2(dz, dx) * 180/pi</c>), spaced <paramref name="spacing"/> apart
+    /// perpendicular to that direction, each clipped down to just the parts that fall inside
+    /// <paramref name="ring"/>. A row that crosses a non-convex bite out of the polygon comes back
+    /// as multiple separate segments rather than one that cuts through empty space.
+    /// </summary>
+    public static List<(LocalPoint A, LocalPoint B)> GenerateParallelRows(IReadOnlyList<LocalPoint> ring, double angleDegrees, double spacing)
+    {
+        var result = new List<(LocalPoint, LocalPoint)>();
+        if (ring.Count < 3 || spacing <= 0)
+            return result;
+
+        var rad = -angleDegrees * Math.PI / 180.0;
+        var dirX = Math.Cos(rad);
+        var dirZ = Math.Sin(rad);
+        var perpX = -dirZ;
+        var perpZ = dirX;
+
+        var minX = ring.Min(p => p.X);
+        var maxX = ring.Max(p => p.X);
+        var minZ = ring.Min(p => p.Z);
+        var maxZ = ring.Max(p => p.Z);
+        var cx = (minX + maxX) / 2.0;
+        var cz = (minZ + maxZ) / 2.0;
+        var halfSpan = Math.Sqrt(Math.Pow(maxX - minX, 2) + Math.Pow(maxZ - minZ, 2)) / 2.0 + spacing;
+
+        var corners = new (double X, double Z)[] { (minX, minZ), (maxX, minZ), (minX, maxZ), (maxX, maxZ) };
+        var offsets = corners.Select(c => (c.X - cx) * perpX + (c.Z - cz) * perpZ);
+        var minOffset = offsets.Min();
+        var maxOffset = offsets.Max();
+
+        for (var offset = minOffset; offset <= maxOffset; offset += spacing)
+        {
+            var baseX = cx + perpX * offset;
+            var baseZ = cz + perpZ * offset;
+            var a = new LocalPoint(baseX - dirX * halfSpan, baseZ - dirZ * halfSpan);
+            var b = new LocalPoint(baseX + dirX * halfSpan, baseZ + dirZ * halfSpan);
+            result.AddRange(ClipSegmentToPolygon(a, b, ring));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Finds the sub-spans of segment a-b that lie inside <paramref name="ring"/>, by intersecting
+    /// with every ring edge and keeping the spans whose midpoint tests inside. Correct for any
+    /// simple (possibly non-convex) polygon.
+    /// </summary>
+    private static List<(LocalPoint, LocalPoint)> ClipSegmentToPolygon(LocalPoint a, LocalPoint b, IReadOnlyList<LocalPoint> ring)
+    {
+        var dx = b.X - a.X;
+        var dz = b.Z - a.Z;
+        var ts = new List<double> { 0.0, 1.0 };
+        var n = ring.Count;
+        for (var i = 0; i < n; i++)
+        {
+            var e0 = ring[i];
+            var e1 = ring[(i + 1) % n];
+            var ex = e1.X - e0.X;
+            var ez = e1.Z - e0.Z;
+            var denom = dx * ez - dz * ex;
+            if (Math.Abs(denom) < 1e-9)
+                continue; // parallel to this edge
+
+            var t = ((e0.X - a.X) * ez - (e0.Z - a.Z) * ex) / denom;
+            var s = ((e0.X - a.X) * dz - (e0.Z - a.Z) * dx) / denom;
+            if (s is >= -1e-9 and <= 1 + 1e-9 && t is >= 0 and <= 1)
+                ts.Add(Math.Clamp(t, 0, 1));
+        }
+
+        ts.Sort();
+        var result = new List<(LocalPoint, LocalPoint)>();
+        for (var i = 0; i < ts.Count - 1; i++)
+        {
+            var t0 = ts[i];
+            var t1 = ts[i + 1];
+            if (t1 - t0 < 1e-6)
+                continue;
+
+            var midT = (t0 + t1) / 2.0;
+            if (!IsPointInPolygon(ring, a.X + midT * dx, a.Z + midT * dz))
+                continue;
+
+            result.Add((
+                new LocalPoint(a.X + t0 * dx, a.Z + t0 * dz),
+                new LocalPoint(a.X + t1 * dx, a.Z + t1 * dz)));
+        }
+
+        return result;
+    }
 }

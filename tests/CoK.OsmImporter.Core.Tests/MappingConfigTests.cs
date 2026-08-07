@@ -48,6 +48,14 @@ public class MappingConfigTests
             foreach (var fillAsset in rule.Fill)
                 catalog.GetObjectType(fillAsset.Filename);
 
+        foreach (var rule in new[] { config.Waterway, config.WaterPolygon, config.ForestPolygon, config.FarmlandPolygon })
+        {
+            if (rule.FenceFilename is { } fenceFilename)
+                catalog.GetObjectType(fenceFilename);
+            if (rule.RowFilename is { } rowFilename)
+                catalog.GetObjectType(rowFilename);
+        }
+
         foreach (var asset in config.Buildings.Default)
             catalog.GetObjectType(asset.Filename);
 
@@ -72,5 +80,15 @@ public class MappingConfigTests
 
         Assert.NotNull(config.Bridge);
         Assert.NotEqual(config.RoadFilename, config.Bridge!.Filename);
+    }
+
+    [Fact]
+    public void DefaultMapping_FarmlandPolygonHasFenceAndRowConfigured()
+    {
+        var config = MappingConfigLoader.LoadDefault();
+
+        Assert.NotNull(config.FarmlandPolygon.FenceFilename);
+        Assert.NotNull(config.FarmlandPolygon.RowFilename);
+        Assert.True(config.FarmlandPolygon.RowSpacing is > 0);
     }
 }

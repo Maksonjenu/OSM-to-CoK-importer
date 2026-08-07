@@ -3,7 +3,7 @@
     "roads": "highway=value -> path_type of the shared road prefab. GUESSED groupings by road hierarchy — pa_road.tscn has 7 visual variants in CoK (17,18,19,20,21,22,23) and there's no way to know which looks like what without opening the editor. Draw one segment of each path_type in CoK and re-map these to match reality.",
     "bridge": "GUESSED — a way tagged highway=* + bridge=yes/viaduct/... uses this asset instead of a plain road. CoK ships two bridge prefabs, pa_bridge_1.tscn (path_type 34, the more common one in the reference template.mommap) and pa_bridge_2.tscn (path_type 35) — picked pa_bridge_1 as the default with no way to tell them apart visually without the editor open. Swap to pa_bridge_2 (or split by road class/width) after checking what each looks like.",
     "buildings": "GUESSED — CoK has no direct equivalent for most OSM building/amenity/shop types. Rules are evaluated top to bottom, first tag match wins; 'default' catches everything else (plain building=house/yes/residential/industrial/... all fall through to generic huts). Expect to redo this after looking at the result in the editor.",
-    "farmland_polygon": "\"посадки\" — cultivated/planted land (farmland, orchards, vineyards, tree nurseries, meadows)."
+    "farmland_polygon": "\"посадки\" — cultivated/planted land (farmland, orchards, vineyards, tree nurseries, meadows). fence_filename/row_filename/row_spacing bake a fence around the boundary and rows of crops inside, confirmed against a real hand-drawn field — but row placement (angle/spacing) is an APPROXIMATION, not a byte-for-byte replica of CoK's own row generator (see MapPath.LayoutRotation's doc comment)."
   },
   "road_filename": "res://Source/World/Paths/pa_road.tscn",
   "roads": {
@@ -67,7 +67,10 @@
   },
   "farmland_polygon": {
     "asset": { "filename": "res://Source/World/Plots/pap_field.tscn", "path_type": 26 },
-    "landuse_values": ["farmland", "orchard", "vineyard", "plant_nursery", "meadow", "greenfield", "allotments"]
+    "landuse_values": ["farmland", "orchard", "vineyard", "plant_nursery", "meadow", "greenfield", "allotments"],
+    "fence_filename": "res://Source/World/WorldObjects/woPathObjects/wo_fence_a.tscn",
+    "row_filename": "res://Source/World/WorldObjects/woPathObjects/wo_salad_row_path_d.tscn",
+    "row_spacing": 1.0
   },
   "trees": [
     { "filename": "res://Source/World/WorldObjects/woDecos/wo_tree_a.tscn", "weight": 1.0 },

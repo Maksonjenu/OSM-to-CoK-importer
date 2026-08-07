@@ -96,6 +96,29 @@ public sealed class TagDrivenPathRule
     /// final output, not real-world tree density).</summary>
     [JsonPropertyName("fill_density")]
     public double? FillDensity { get; init; }
+
+    /// <summary>
+    /// Fence tile stretched along each boundary edge of a closed Plot (one per edge, same
+    /// stretched-tile mechanism as roads/barriers — see OsmToMommapConverter.BuildLineObjectGroups)
+    /// — confirmed against a real hand-drawn farmland field, which has this on every edge plus a
+    /// corner post on one of them (posts not replicated in v1). Null = no fence (forest/water/
+    /// waterway plots don't get one).
+    /// </summary>
+    [JsonPropertyName("fence_filename")]
+    public string? FenceFilename { get; init; }
+
+    /// <summary>
+    /// Crop-row tile scattered as parallel segments clipped to a closed Plot's interior (farmland
+    /// only) — an approximation of CoK's own row-fill baking (see MapPath.LayoutRotation for what's
+    /// NOT replicated). Null = no row fill (forest instead uses Fill/FillDensity scatter).
+    /// </summary>
+    [JsonPropertyName("row_filename")]
+    public string? RowFilename { get; init; }
+
+    /// <summary>Perpendicular spacing between rows, in output map units — NOT scaled by --scale,
+    /// same reasoning as FillDensity.</summary>
+    [JsonPropertyName("row_spacing")]
+    public double? RowSpacing { get; init; }
 }
 
 /// <summary>
