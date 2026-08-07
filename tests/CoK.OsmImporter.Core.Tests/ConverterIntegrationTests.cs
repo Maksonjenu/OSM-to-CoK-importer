@@ -324,6 +324,9 @@ public class ConverterIntegrationTests
         Assert.All(riverPolygons, p => Assert.True(p.IsClosed));
         Assert.All(riverPolygons, p => Assert.Empty(p.AreaObjects ?? new List<MapObject>()));
         Assert.Equal(1, summary.Rivers); // still counted once at the OSM-feature level, regardless of split pieces
+        // Regression: summary.WaterPolygons must reflect every emitted piece, not just 0 (the
+        // river-buffer branch used to discard EmitPolygonFeature's return value entirely).
+        Assert.Equal(riverPolygons.Count, summary.WaterPolygons);
     }
 
     [Fact]

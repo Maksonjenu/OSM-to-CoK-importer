@@ -165,7 +165,7 @@ public sealed class OsmToMommapConverter
                     // water-body shape (see FindNamedWaterPolygons) — a rough approximation from the
                     // centerline + a configured width, used only when nothing better is available.
                     var ring = GeometryHelpers.BuildBufferPolygon(pathPoints, riverWidth);
-                    EmitPolygonFeature(ring, _mapping.WaterPolygon, ctx, id);
+                    ctx.Summary.WaterPolygons += EmitPolygonFeature(ring, _mapping.WaterPolygon, ctx, id);
                 }
                 else if (!ctx.Options.RiversAsWaterPolygons)
                 {
