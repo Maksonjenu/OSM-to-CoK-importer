@@ -2,8 +2,15 @@
 
 ## Быстрый старт
 
+1. Скачайте последний релиз для своей ОС со страницы [Releases](https://github.com/Maksonjenu/OSM-to-CoK-importer/releases/latest) и распакуйте архив.
+2. Запустите:
+
 ```bash
-dotnet run --project src/CoK.OsmImporter.Cli -- --osm your-map.osm --out result.mommap --scale 10
+# Windows
+CoK.OsmImporter.Cli.exe --osm your-map.osm --out result.mommap --scale 10
+
+# Linux/macOS
+./CoK.OsmImporter.Cli --osm your-map.osm --out result.mommap --scale 10
 ```
 
 Импортирует данные [OpenStreetMap](https://www.openstreetmap.org) (дороги, реки, озёра, леса, поля/посадки, деревья, здания) в файл карты редактора [Canvas of Kings](https://store.steampowered.com/app/2498570/Canvas_of_Kings/) (`.mommap`). Сделано чтобы превратить реальное место в основу для настольной ролевой карты, а **не для точной картографии**.
