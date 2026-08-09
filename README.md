@@ -1,5 +1,11 @@
 # CoK OSM Importer
 
+## Quick Start
+
+```bash
+dotnet run --project src/CoK.OsmImporter.Cli -- --osm your-map.osm --out result.mommap --scale 10
+```
+
 Imports [OpenStreetMap](https://www.openstreetmap.org) data (roads, rivers, lakes, forests, fields/plantations, trees, buildings) into a map file for the [Canvas of Kings](https://store.steampowered.com/app/2498570/Canvas_of_Kings/) editor (`.mommap`). Built to turn a real-world place into the basis for a tabletop RPG map, **not for accurate cartography**.
 
 Russian version: [README.ru.md](README.ru.md)
@@ -33,7 +39,7 @@ dotnet test
 
 > (Some tests optionally load `template.mommap`/`mejka_map.osm` from the repo root if you've placed your own copies there — if the files aren't present, those tests simply no-op, so the full suite passes even on a fresh clone with no setup at all.)
 
-## Quick start
+## Full example with options
 
 ```
 dotnet run --project src/CoK.OsmImporter.Cli -- ^
